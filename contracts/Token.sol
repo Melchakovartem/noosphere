@@ -1,8 +1,11 @@
-pragma solidity ^0.4.15;
+pragma solidity ^0.4.13;
 
 import "./owned.sol";
 import "./ERC20.sol";
 
+contract ERC223ReceivingContract { 
+    function tokenFallback(address _from, uint _value, bytes _data) public;
+}
 
 contract Token is ERC20, owned 
 {
@@ -14,13 +17,12 @@ contract Token is ERC20, owned
   uint256 _totalSupply = 0;
   
   event Burned(address backer, uint _value);
+  event Transfer(address indexed from, address indexed to, uint value, bytes indexed data);
  
-  // Balances for each account
   mapping(address => uint256) balances;
 
   mapping(address => uint256) lockedTillTime;
  
-  // Owner of account approves the transfer of an amount to another account
   mapping(address => mapping (address => uint256)) allowed;
 
   address public crowdsale;
@@ -73,17 +75,49 @@ contract Token is ERC20, owned
   function finalize() public onlyOwnerOrCrowdsale {
     finalized = true;
   }
+
+  function isContract(address _addr) private returns (bool is_contract) {
+      uint length;
+      assembly {
+            length := extcodesize(_addr)
+      }
+      return (length>0);
+    }
  
   // Transfer the balance from owner's account to another account
-  function transfer(address _to, uint256 _amount) public returns (bool success) 
-  {
+  function transfer(address _to, uint256 _amount) public returns (bool success) {
     if (balances[msg.sender] >= _amount 
       && _amount > 0
       && balances[_to] + _amount > balances[_to]
       && isUnlocked(msg.sender)) 
     {
-      balances[msg.sender] -= _amount;
-      balances[_to] += _amount;
+      bytes memory _empty;
+
+      if(isContract(_to)) {
+        ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
+        receiver.tokenFallback(msg.sender, _amount, _empty);
+      }
+      balances[msg.sender] = safeSub(balances[msg.sender], _amount);
+      balances[_to] = safeAdd(balances[_to], _amount);
+      Transfer(msg.sender, _to, _amount);
+      return true;
+    } else {
+      revert();
+    }
+  }
+
+  function transfer(address _to, uint256 _amount, bytes _data) public returns (bool success) {
+    if (balances[msg.sender] >= _amount 
+      && _amount > 0
+      && balances[_to] + _amount > balances[_to]
+      && isUnlocked(msg.sender)) 
+    {
+      if(isContract(_to)) {
+        ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
+        receiver.tokenFallback(msg.sender, _amount, _data);
+      }
+      balances[msg.sender] = safeSub(balances[msg.sender], _amount);
+      balances[_to] = safeAdd(balances[_to], _amount);
       Transfer(msg.sender, _to, _amount);
       return true;
     } else {
@@ -108,8 +142,6 @@ contract Token is ERC20, owned
     }
   }
  
-  // Allow _spender to withdraw from your account, multiple times, up to the _value amount.
-  // If this function is called again it overwrites the current allowance with _value.
   function approve(address _spender, uint256 _amount) public returns (bool success) 
   {
     allowed[msg.sender][_spender] = _amount;
