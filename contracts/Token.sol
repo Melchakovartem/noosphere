@@ -25,24 +25,20 @@ contract Token is ERC20, ERC223, owned, SafeMath
   mapping(address => mapping (address => uint256)) allowed;
 
   
-  function totalSupply() public constant returns (uint256 totalTokenCount) 
-  {
+  function totalSupply() public constant returns (uint256 totalTokenCount) {
     return _totalSupply;
   }
  
   // What is the balance of a particular account?
-  function balanceOf(address _owner) public constant returns (uint256 balance) 
-  {
+  function balanceOf(address _owner) public constant returns (uint256 balance) {
     return balances[_owner];
   }
 
-  function getUnlockTime(address _owner) public constant returns (uint256 unlockTime) 
-  {
+  function getUnlockTime(address _owner) public constant returns (uint256 unlockTime) {
     return lockedTillTime[_owner];
   }
 
-  function isUnlocked(address _owner) public constant returns (bool unlocked) 
-  {
+  function isUnlocked(address _owner) public constant returns (bool unlocked) {
     return lockedTillTime[_owner] < now;
   }
 
@@ -65,56 +61,46 @@ contract Token is ERC20, ERC223, owned, SafeMath
     return transfer(_to, _amount, _empty);
   }
 
-  function transfer(address _to, uint256 _amount, bytes _data) public returns (bool success) {
-    if (balances[msg.sender] >= _amount 
-      && _amount > 0
-      && balances[_to] + _amount > balances[_to]
-      && isUnlocked(msg.sender)) 
-    {
-      if(isContract(_to)) {
-        ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
-        receiver.tokenFallback(msg.sender, _amount, _data);
-      }
-      balances[msg.sender] = safeSub(balances[msg.sender], _amount);
-      balances[_to] = safeAdd(balances[_to], _amount);
-      Transfer(msg.sender, _to, _amount);
-      return true;
-    } else {
-      revert();
+  function transfer(address _to, uint256 _amount, bytes _data) public  returns (bool success) {
+    require(isUnlocked(msg.sender));
+
+    balances[msg.sender] = safeSub(balances[msg.sender], _amount);
+    balances[_to] = safeAdd(balances[_to], _amount);
+    Transfer(msg.sender, _to, _amount);
+
+    if(isContract(_to)) {
+      ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
+      receiver.tokenFallback(msg.sender, _amount, _data);
     }
+
+    return true;
   }
  
   function transferFrom(address _from, address _to, uint256 _amount) public returns (bool success) {
-  if (balances[_from] >= _amount
-      && allowed[_from][msg.sender] >= _amount
-      && _amount > 0
-      && balances[_to] + _amount > balances[_to] 
-      && isUnlocked(_from))
-    {
-      balances[_from] -= _amount;
-      allowed[_from][msg.sender] -= _amount;
-      balances[_to] += _amount;
-      Transfer(_from, _to, _amount);
-      return true;
-    } else {
-      revert();
-    }
+    require(isUnlocked(_from));
+
+    uint _allowance = allowed[_from][msg.sender];
+
+    balances[_to] = safeAdd(balances[_to], _amount);
+    balances[_from] = safeSub(balances[_from], _amount);
+    allowed[_from][msg.sender] = safeSub(_allowance, _amount);
+
+    Transfer(_from, _to, _amount);
+
+    return true;
   }
  
-  function approve(address _spender, uint256 _amount) public returns (bool success) 
-  {
+  function approve(address _spender, uint256 _amount) public returns (bool success) {
     allowed[msg.sender][_spender] = _amount;
     Approval(msg.sender, _spender, _amount);
     return true;
   }
  
-  function allowance(address _owner, address _spender) public constant returns (uint256 remaining) 
-  {
+  function allowance(address _owner, address _spender) public constant returns (uint256 remaining) {
     return allowed[_owner][_spender];
   }
 
-  function mint(address target, uint256 mintedAmount, uint256 lockTime) public onlyOwner 
-  {
+  function mint(address target, uint256 mintedAmount, uint256 lockTime) public onlyOwner {
     require(mintedAmount > 0 && !finalized);
 
     balances[target] = safeAdd(balances[target], mintedAmount);
