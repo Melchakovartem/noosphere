@@ -1,13 +1,15 @@
-pragma solidity ^0.4.13;
+pragma solidity ^0.4.15;
 
 import "./owned.sol";
 import "./ERC20.sol";
+import "./ERC223.sol";
+import "./SafeMath.sol";
 
 contract ERC223ReceivingContract { 
     function tokenFallback(address _from, uint _value, bytes _data) public;
 }
 
-contract Token is ERC20, owned 
+contract Token is ERC20, ERC223, owned, SafeMath 
 {
   string public constant symbol = "NZT";
   string public constant name = "NZT";
@@ -15,9 +17,6 @@ contract Token is ERC20, owned
   bool public finalized = false;
 
   uint256 _totalSupply = 0;
-  
-  event Burned(address backer, uint _value);
-  event Transfer(address indexed from, address indexed to, uint value, bytes indexed data);
  
   mapping(address => uint256) balances;
 
@@ -25,31 +24,6 @@ contract Token is ERC20, owned
  
   mapping(address => mapping (address => uint256)) allowed;
 
-  address public crowdsale;
-
-  function changeCrowdsale(address newCrowdsale) public onlyOwner 
-  {
-    crowdsale = newCrowdsale;
-  }
-
-  modifier onlyOwnerOrCrowdsale 
-  {
-    require(msg.sender == owner || msg.sender == crowdsale);
-    _;
-  }
-
-  function safeAdd(uint256 _x, uint256 _y) internal pure returns (uint256) 
-  {
-    uint256 z = _x + _y;
-    assert(z >= _x);
-    return z;
-  }
-
-  function safeSub(uint256 _x, uint256 _y) internal pure returns (uint256) 
-  {
-    assert(_x >= _y);
-    return _x - _y;
-  }
   
   function totalSupply() public constant returns (uint256 totalTokenCount) 
   {
@@ -72,7 +46,7 @@ contract Token is ERC20, owned
     return lockedTillTime[_owner] < now;
   }
 
-  function finalize() public onlyOwnerOrCrowdsale {
+  function finalize() public onlyOwner {
     finalized = true;
   }
 
@@ -86,24 +60,9 @@ contract Token is ERC20, owned
  
   // Transfer the balance from owner's account to another account
   function transfer(address _to, uint256 _amount) public returns (bool success) {
-    if (balances[msg.sender] >= _amount 
-      && _amount > 0
-      && balances[_to] + _amount > balances[_to]
-      && isUnlocked(msg.sender)) 
-    {
-      bytes memory _empty;
+     bytes memory _empty;
 
-      if(isContract(_to)) {
-        ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
-        receiver.tokenFallback(msg.sender, _amount, _empty);
-      }
-      balances[msg.sender] = safeSub(balances[msg.sender], _amount);
-      balances[_to] = safeAdd(balances[_to], _amount);
-      Transfer(msg.sender, _to, _amount);
-      return true;
-    } else {
-      revert();
-    }
+    return transfer(_to, _amount, _empty);
   }
 
   function transfer(address _to, uint256 _amount, bytes _data) public returns (bool success) {
@@ -154,7 +113,7 @@ contract Token is ERC20, owned
     return allowed[_owner][_spender];
   }
 
-  function mint(address target, uint256 mintedAmount, uint256 lockTime) public onlyOwnerOrCrowdsale 
+  function mint(address target, uint256 mintedAmount, uint256 lockTime) public onlyOwner 
   {
     require(mintedAmount > 0 && !finalized);
 
@@ -165,23 +124,5 @@ contract Token is ERC20, owned
     {
       lockedTillTime[target] = lockTime;
     }
-  }
-
-  function burn(address target, uint256 burnedAmount) public onlyOwnerOrCrowdsale
-  {
-    require(burnedAmount > 0);
-
-    if (balances[target] >= burnedAmount)
-    {
-      balances[target] -= burnedAmount;
-    }
-    else
-    {
-      burnedAmount = balances[target];
-      balances[target] = 0;
-    }
-
-    _totalSupply = safeSub(_totalSupply, burnedAmount);
-    Burned(target, burnedAmount);
   }
 }
