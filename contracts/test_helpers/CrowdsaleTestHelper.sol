@@ -13,8 +13,9 @@ contract CrowdsaleTestHelper is Crowdsale
     	                         address nodes, 
     	                         address team, 
     	                         uint start, 
-    	                         uint end) public
-        Crowdsale(foundation, advisers, nodes, team, start, end) {
+    	                         uint end,
+    	                         uint lock) public
+        Crowdsale(foundation, advisers, nodes, team, start, end, lock) {
         }
 
     function getCurrentTime() internal constant returns (uint) {
@@ -23,5 +24,25 @@ contract CrowdsaleTestHelper is Crowdsale
 
     function setTime(uint time) external onlyOwner {
         m_time = time;
+    }
+
+    function hardcap() public pure returns (uint256) {
+        return 255 ether; 
+    }
+
+    function totalBonusTokens() public constant returns (uint256) {
+        return 6225450000000000000000;
+    }
+
+    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
+        uint bonus = 0;
+
+        if (money >= 2.5 ether) {
+            bonus = tokens * 15 / 100;
+        }
+        if (money >= 0.5 ether && money < 2.5 ether) {
+            bonus = tokens * 20 / 100;
+        }
+        return bonus;
     }
 }

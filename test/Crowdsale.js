@@ -5,7 +5,10 @@ contract('Crowdsale', function(accounts) {
 
 	const startTime = 10000;
 	const durationDays = 10;
-    const endTime = startTime + durationDays * 60*60*24; 
+    const endTime = startTime + durationDays * 60*60*24;
+    const lockTime =  100000;
+    const pricePerTokenInWei = 37850000000000;
+    const totalBonusTokens = 6225450000000000000000;
 
 	function ETH(amount) {
         return web3.toWei(amount, 'ether');
@@ -18,11 +21,12 @@ contract('Crowdsale', function(accounts) {
 	beforeEach('setup contract for each test', async function () {
         owner = accounts[0]
         investor1 = accounts[1]
+        investor2 = accounts[6]
         foundation = accounts[2]
         advisers = accounts[3]
         nodes = accounts[4]
         team = accounts[5]
-        crowdsale = await Crowdsale.new(foundation, advisers, nodes, team, startTime, endTime, {from: owner})
+        crowdsale = await Crowdsale.new(foundation, advisers, nodes, team, startTime, endTime, lockTime, {from: owner})
         crowdsale_address = await crowdsale.address
         token_address = await crowdsale.token()
         token = await Token.at(token_address)
@@ -62,6 +66,7 @@ contract('Crowdsale', function(accounts) {
     	
     	assert.equal(await token.balanceOf(investor1), purchased_tokens)
     	assert.equal(await token.totalSupply(), purchased_tokens)
+    	assert.equal(await crowdsale.totalCollected(), eth_invest)
     })
 
     it('does not buy tokens when ico on pause', async function() {
@@ -79,6 +84,7 @@ contract('Crowdsale', function(accounts) {
         
     	assert.equal(await token.balanceOf(investor1), 0)
     	assert.equal(await token.totalSupply(), 0)
+    	assert.equal(await crowdsale.totalCollected(), 0)
     })
 
     it('buys tokens when ico on unpause', async function() {
@@ -97,6 +103,7 @@ contract('Crowdsale', function(accounts) {
 
         assert.equal(await token.balanceOf(investor1), 0)
     	assert.equal(await token.totalSupply(), 0)
+    	assert.equal(await crowdsale.totalCollected(), 0)
 
         await crowdsale.unpause({from: owner})
 
@@ -104,11 +111,11 @@ contract('Crowdsale', function(accounts) {
 
     	assert.equal(await token.balanceOf(investor1), purchased_tokens)
     	assert.equal(await token.totalSupply(), purchased_tokens)
+    	assert.equal(await crowdsale.totalCollected(), eth_invest)
     })
 
     it('does not buy tokens when ico not started', async function() {
     	eth_invest = ETH(0.003785)
-    	owner_balance = web3.eth.getBalance(owner)
 
     	await crowdsale.setTime(startTime - 10, {from: owner});
 
@@ -120,11 +127,11 @@ contract('Crowdsale', function(accounts) {
         
     	assert.equal(await token.balanceOf(investor1), 0)
     	assert.equal(await token.totalSupply(), 0)
+    	assert.equal(await crowdsale.totalCollected(), 0)
     })
 
     it('does not buy tokens when ico ended', async function() {
     	eth_invest = ETH(0.003785)
-    	owner_balance = web3.eth.getBalance(owner)
 
     	await crowdsale.setTime(endTime + 10, {from: owner});
 
@@ -136,6 +143,79 @@ contract('Crowdsale', function(accounts) {
         
     	assert.equal(await token.balanceOf(investor1), 0)
     	assert.equal(await token.totalSupply(), 0)
+    	assert.equal(await crowdsale.totalCollected(), 0)
+    })
+
+    it('does not buy tokens when hard cap is reached', async function() {
+    	eth_invest1 = ETH(255)
+    	eth_invest2 = ETH(0.1)
+
+    	await crowdsale.setTime(startTime + 10, {from: owner});
+        await crowdsale.sendTransaction({from: investor1, to: crowdsale_address, value: eth_invest1})
+
+    	try {
+           await crowdsale.sendTransaction({from: investor2, to: crowdsale_address, value: eth_invest2})
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert')
+        }
+
+    	assert.equal(await token.balanceOf(investor2), 0)
+    	assert.equal(await crowdsale.totalCollected(), eth_invest1)
+    })
+
+    it('recievs bonus 15% tokens when invest >= 250 ETH', async function() {
+    	eth_invest = ETH(3.785);
+    	purchased_tokens = get_purchased_tokens(eth_invest);
+    	bonusTokens = purchased_tokens * 0.15;
+    	totalTokens = bonusTokens + purchased_tokens;
+
+    	await crowdsale.setTime(startTime + 10, {from: owner});
+
+    	await crowdsale.sendTransaction({from: investor1, to: crowdsale_address, value: eth_invest})
+
+    	assert.equal(await token.balanceOf(investor1), totalTokens)
+    	assert.equal(await token.totalSupply(), totalTokens)
+    	assert.equal(await crowdsale.totalCollected(), eth_invest)
+    })
+
+    it('recievs bonus 20% tokens when 250 > invest > 50 ETH and ', async function() {
+    	eth_invest = ETH(0.757);
+    	purchased_tokens = get_purchased_tokens(eth_invest);
+    	bonusTokens = purchased_tokens * 0.20;
+    	totalTokens = bonusTokens + purchased_tokens;
+
+    	await crowdsale.setTime(startTime + 10, {from: owner});
+
+    	await crowdsale.sendTransaction({from: investor1, to: crowdsale_address, value: eth_invest})
+
+    	assert.equal(await token.balanceOf(investor1), totalTokens)
+    	assert.equal(await token.totalSupply(), totalTokens)
+    	assert.equal(await crowdsale.totalCollected(), eth_invest)
+    })
+
+    it('does not recieve bonus tokens because bonus tokens is ended ', async function() {
+    	eth_invest1 = ETH(189.25);
+        eth_invest2 = ETH(3.785);
+
+    	purchased_tokens1 = get_purchased_tokens(eth_invest1);
+        purchased_tokens2 = get_purchased_tokens(eth_invest2);
+    	bonusTokens1 = totalBonusTokens;
+    	totalTokens1 = purchased_tokens1 + bonusTokens1;
+
+    	await crowdsale.setTime(startTime + 10, {from: owner});
+
+    	await crowdsale.sendTransaction({from: investor1, to: crowdsale_address, value: eth_invest1})
+
+        totalBonus = await crowdsale.totalBonusTokens();
+
+        assert.equal(await crowdsale.totalMintedBonusTokens(), totalBonusTokens)
+
+        await crowdsale.sendTransaction({from: investor2, to: crowdsale_address, value: eth_invest2})
+    	
+        assert.equal(await token.balanceOf(investor2), purchased_tokens2)
+    	
+        assert.equal(await crowdsale.totalMintedBonusTokens(), totalBonusTokens)
+
     })
 })
 

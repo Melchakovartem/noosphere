@@ -14,15 +14,27 @@ contract Crowdsale is SafeMath, owned {
 
     uint public startTime; 
     uint public endTime;
+    uint public lockTime;
     
     bool public paused = false;
-    uint public hardcap = 25500 ether;
     uint public totalCollected = 0;
-    uint public lockTime = 1546300800; // 01/01/2019 12:00am
+    uint public totalMintedBonusTokens = 0;
+    uint public pricePerTokenInWei = 3785000000000000;
+    uint public tokenMultiplier = 10 ** 18;
 
     Token public token = new Token();
+
+    modifier isOpen {
+        require(getCurrentTime() > startTime && getCurrentTime() < endTime);
+        _;
+    }
+
+    modifier isUnpaused {
+        require(!paused);
+        _;
+    }
     
-    function Crowdsale(address foundation, address advisers, address nodes, address team, uint start, uint end) {
+    function Crowdsale(address foundation, address advisers, address nodes, address team, uint start, uint end, uint lockTime) {
         owner = msg.sender;
         multisigFoundation = foundation;
         multisigAdvisers = advisers;
@@ -32,6 +44,14 @@ contract Crowdsale is SafeMath, owned {
         endTime = end;
     }
 
+    function hardcap() public pure returns (uint256) {
+        return 25500 ether; 
+    }
+
+    function totalBonusTokens() public constant returns (uint256) {
+        return 622545000000000000000000;
+    }
+
     function pause() public onlyOwner {
         paused = true;
     }
@@ -39,13 +59,38 @@ contract Crowdsale is SafeMath, owned {
     function unpause() public onlyOwner {
         paused = false;
     }
+
+    function isReachedHardCap() public constant returns (bool reached) {
+        return totalCollected >= hardcap();
+    }
     
-    function() external payable {
-        require(getCurrentTime() > startTime && getCurrentTime() < endTime && !paused);
+    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
+        uint bonus = 0;
+
+        if (money >= 250 ether) {
+            bonus = tokens * 15 / 100;
+        }
+        if (money >= 50 ether && money < 250) {
+            bonus = tokens * 20 / 100;
+        }
+        return bonus;
+    }
+
+    function() external isOpen isUnpaused payable {
+        require(!isReachedHardCap());
         owner.transfer(msg.value);
-        uint tokens = safeDiv(safeMul(1000000, (msg.value)), 3785);
+
+        uint tokens = tokenMultiplier * msg.value / pricePerTokenInWei;
+        uint bonusTokens = getBonus(msg.value, tokens);
+        uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
+        if (remainBonusTokens < bonusTokens) {
+            bonusTokens = remainBonusTokens;
+        }
+        
+        tokens += bonusTokens;
         token.mint(msg.sender, tokens, lockTime);
-        totalCollected += tokens;
+        totalCollected += msg.value;
+        totalMintedBonusTokens += bonusTokens;
     }
 
     function getCurrentTime() internal constant returns (uint) {
