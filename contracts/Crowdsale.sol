@@ -5,8 +5,16 @@ import "./Token.sol";
 import "./SafeMath.sol";
 
 contract Crowdsale is SafeMath, owned {
-    
+
+    struct Pool {
+        address multisig;
+        uint percent;
+    }
+
+    Pool[] public pools;
+
     address public owner;
+
     address public multisigFoundation;
     address public multisigAdvisers;
     address public multisigNodes;
@@ -17,7 +25,6 @@ contract Crowdsale is SafeMath, owned {
     uint public lockTime;
     
     bool public paused = false;
-    uint public totalCollected = 0;
     uint public totalMintedBonusTokens = 0;
     uint public pricePerTokenInWei = 3785000000000000;
     uint public tokenMultiplier = 10 ** 18;
@@ -34,7 +41,9 @@ contract Crowdsale is SafeMath, owned {
         _;
     }
     
-    function Crowdsale(address foundation, address advisers, address nodes, address team, uint start, uint end, uint lockTime) {
+    function Crowdsale(address foundation, address advisers, 
+                       address nodes, address team, 
+                       uint start, uint end, uint lockTime) {
         owner = msg.sender;
         multisigFoundation = foundation;
         multisigAdvisers = advisers;
@@ -52,6 +61,10 @@ contract Crowdsale is SafeMath, owned {
         return 622545000000000000000000;
     }
 
+    function minValue() public pure returns (uint256) {
+        return 2 ether;
+    }
+
     function pause() public onlyOwner {
         paused = true;
     }
@@ -61,7 +74,18 @@ contract Crowdsale is SafeMath, owned {
     }
 
     function isReachedHardCap() public constant returns (bool reached) {
-        return totalCollected >= hardcap();
+        return token.totalCollected() >= hardcap();
+    }
+
+    function isFinished() internal constant returns (bool finished) {
+        return   getCurrentTime() > endTime  || isReachedHardCap();
+    }
+
+    function tokenDistribution() private {
+         pools.push(Pool({multisig: multisigFoundation, percent: 29}));
+         pools.push(Pool({multisig: multisigAdvisers, percent: 6}));
+         pools.push(Pool({multisig: multisigNodes, percent: 26}));
+         pools.push(Pool({multisig: multisigTeam, percent: 7}));
     }
     
     function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
@@ -76,40 +100,21 @@ contract Crowdsale is SafeMath, owned {
         return bonus;
     }
 
-    function isFinished() internal constant returns (bool finished) {
-        return   getCurrentTime() > endTime  || isReachedHardCap();
-    }
-
     function setIcoSucceeded() public onlyOwner {
         require(isFinished());
 
         uint tokensForDistribution = token.totalSupply() * 100 / 32;
 
-        uint tokensForFoundation = tokensForDistribution * 29 / 100;
-        uint tokensForAdvisers = tokensForDistribution * 6 / 100; //lock
-        uint tokensForNodes =  tokensForDistribution * 26 / 100;
-        uint tokensForTeam = tokensForDistribution * 7 / 100;
+        tokenDistribution();
 
-        token.mint(multisigFoundation, tokensForFoundation, lockTime);
-        token.mint(multisigAdvisers, tokensForAdvisers, lockTime);
-        token.mint(multisigNodes, tokensForNodes, lockTime);
-        token.mint(multisigTeam, tokensForTeam, lockTime);
-
-        token.finalize();
-    }
-
-    function() external isOpen isUnpaused payable {
-        require(!isFinished());
-        uint amount = msg.value;
-        address backer = msg.sender;
-
-        uint remain = hardcap() - totalCollected;
-
-        if (remain < amount) {
-            backer.transfer(amount - remain);
-            amount = remain; 
+        for (uint256 i = 0; i < pools.length; i++) {
+            token.mint(pools[i].multisig, tokensForDistribution * pools[i].percent / 100, lockTime);
         }
 
+        token.mintingFinish();
+    }
+
+    function mintTokens(uint amount, address backer) private {
         uint tokens = tokenMultiplier * amount / pricePerTokenInWei;
         uint bonusTokens = getBonus(amount, tokens);
         uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
@@ -118,11 +123,30 @@ contract Crowdsale is SafeMath, owned {
         }    
         tokens += bonusTokens;
         token.mint(backer, tokens, lockTime);
-
-
-        owner.transfer(amount);
-        totalCollected += amount;
         totalMintedBonusTokens += bonusTokens;
+    }
+
+    function processPayment(uint amount, address backer) private returns (uint) {
+        uint remain = hardcap() - token.totalCollected();
+
+        if (remain < amount) {
+            backer.transfer(amount - remain);
+            amount = remain; 
+        }
+        
+        owner.transfer(amount);
+        token.addCollected(amount);
+        return amount;
+    }
+
+    function() external isOpen isUnpaused payable {
+        require(!isFinished() && msg.value >= minValue());
+        
+        uint amount = msg.value;
+        address backer = msg.sender;
+
+        amount = processPayment(amount, backer);
+        mintTokens(amount, backer);  
     }
 
     function getCurrentTime() internal constant returns (uint) {

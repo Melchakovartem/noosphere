@@ -14,9 +14,11 @@ contract Token is ERC20, ERC223, owned, SafeMath
   string public constant symbol = "NZT";
   string public constant name = "NZT";
   uint8 public constant decimals = 18;
-  bool public finalized = false;
+  bool public mintingFinished = false;
 
   uint256 _totalSupply = 0;
+
+  uint256 _totalCollected = 0;
  
   mapping(address => uint256) balances;
 
@@ -24,12 +26,19 @@ contract Token is ERC20, ERC223, owned, SafeMath
  
   mapping(address => mapping (address => uint256)) allowed;
 
-  
+  modifier canMint() {
+    require(!mintingFinished);
+    _;
+  }
+ 
   function totalSupply() public constant returns (uint256 totalTokenCount) {
     return _totalSupply;
   }
+
+  function totalCollected() public constant returns (uint256 totalTokenCount) {
+    return _totalCollected;
+  }
  
-  // What is the balance of a particular account?
   function balanceOf(address _owner) public constant returns (uint256 balance) {
     return balances[_owner];
   }
@@ -42,8 +51,12 @@ contract Token is ERC20, ERC223, owned, SafeMath
     return lockedTillTime[_owner] < now;
   }
 
-  function finalize() public onlyOwner {
-    finalized = true;
+  function mintingFinish() public onlyOwner {
+    mintingFinished = true;
+  }
+
+  function addCollected(uint amount) public onlyOwner {
+    _totalCollected += amount;
   }
 
   function isContract(address _addr) private returns (bool is_contract) {
@@ -54,7 +67,6 @@ contract Token is ERC20, ERC223, owned, SafeMath
       return (length>0);
     }
  
-  // Transfer the balance from owner's account to another account
   function transfer(address _to, uint256 _amount) public returns (bool success) {
      bytes memory _empty;
 
@@ -100,8 +112,8 @@ contract Token is ERC20, ERC223, owned, SafeMath
     return allowed[_owner][_spender];
   }
 
-  function mint(address target, uint256 mintedAmount, uint256 lockTime) public onlyOwner {
-    require(mintedAmount > 0 && !finalized);
+  function mint(address target, uint256 mintedAmount, uint256 lockTime) public canMint onlyOwner {
+    require(mintedAmount > 0);
 
     balances[target] = safeAdd(balances[target], mintedAmount);
     _totalSupply = safeAdd(_totalSupply, mintedAmount);

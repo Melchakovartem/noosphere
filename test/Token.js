@@ -96,7 +96,7 @@ contract('Token', function(accounts) {
     	assert.equal(await nzt.balanceOf(investor1), 0.1e20)
     	assert.equal(await nzt.totalSupply(), 0.1e20)
 
-    	await nzt.finalize({from: owner})
+    	await nzt.mintingFinish({from: owner})
     	try {
             await nzt.mint(investor2, 0.1e20, unlockedTime, {from: owner})
         } catch (error) {
