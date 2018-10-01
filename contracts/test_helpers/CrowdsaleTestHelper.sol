@@ -3,7 +3,7 @@ pragma solidity ^0.4.15;
 import '../Crowdsale.sol';
 
 
-/// @title Test helper for Crowdsale, DONT use it in production!
+///DONT use it in production!
 contract CrowdsaleTestHelper is Crowdsale 
 {
     uint m_time;
