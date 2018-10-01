@@ -76,6 +76,28 @@ contract Crowdsale is SafeMath, owned {
         return bonus;
     }
 
+    function isFinished() internal constant returns (bool finished) {
+        return   getCurrentTime() > endTime  || isReachedHardCap();
+    }
+
+    function setIcoSucceeded() public onlyOwner {
+        require(isFinished());
+
+        uint tokensForDistribution = token.totalSupply() * 100 / 32;
+
+        uint tokensForFoundation = tokensForDistribution * 29 / 100;
+        uint tokensForAdvisers = tokensForDistribution * 6 / 100; //lock
+        uint tokensForNodes =  tokensForDistribution * 26 / 100;
+        uint tokensForTeam = tokensForDistribution * 7 / 100;
+
+        token.mint(multisigFoundation, tokensForFoundation, lockTime);
+        token.mint(multisigAdvisers, tokensForAdvisers, lockTime);
+        token.mint(multisigNodes, tokensForNodes, lockTime);
+        token.mint(multisigTeam, tokensForTeam, lockTime);
+
+        token.finalize();
+    }
+
     function() external isOpen isUnpaused payable {
         require(!isReachedHardCap());
         owner.transfer(msg.value);

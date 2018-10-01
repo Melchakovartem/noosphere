@@ -17,11 +17,24 @@ contract('Crowdsale', function(accounts) {
     function get_purchased_tokens(eth) {
     	return eth / 0.003785;
     }
+
+    function getTokensDistribution(amount) {
+        var tokensForDistribution = Math.floor(amount * 100) / 32;
+        var distribution = {};
+
+        distribution["foundation"] = tokensForDistribution * 29 / 100;
+        distribution["advisers"] = tokensForDistribution * 6 / 100;
+        distribution["nodes"] = tokensForDistribution * 26 / 100;
+        distribution["team"] = Math.floor((tokensForDistribution * 7 / 100) / Math.pow(10,8)) * Math.pow(10,8); //solution for rounding problems
+        return distribution;
+    }
     
 	beforeEach('setup contract for each test', async function () {
         owner = accounts[0]
+
         investor1 = accounts[1]
         investor2 = accounts[6]
+
         foundation = accounts[2]
         advisers = accounts[3]
         nodes = accounts[4]
@@ -216,6 +229,28 @@ contract('Crowdsale', function(accounts) {
     	
         assert.equal(await crowdsale.totalMintedBonusTokens(), totalBonusTokens)
 
+    })
+
+    it('distributes tokens when ico end and succeded', async function(){
+        eth_invest = ETH(24.224);
+        purchased_tokens = get_purchased_tokens(eth_invest);
+        bonusTokens = purchased_tokens * 0.15;
+        totalTokens = purchased_tokens + bonusTokens;
+
+        await crowdsale.setTime(startTime + 10, {from: owner});
+
+        await crowdsale.sendTransaction({from: investor1, to: crowdsale_address, value: eth_invest});
+
+        distribution = getTokensDistribution(totalTokens);
+
+        await crowdsale.setTime(endTime + 10, {from: owner});
+
+        await crowdsale.setIcoSucceeded({from: owner});
+
+        assert.equal(await token.balanceOf(foundation), distribution["foundation"])
+        assert.equal(await token.balanceOf(advisers), distribution["advisers"])
+        assert.equal(await token.balanceOf(nodes), distribution["nodes"])
+        assert.equal(await token.balanceOf(team), distribution["team"])
     })
 })
 
