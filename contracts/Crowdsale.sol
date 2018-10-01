@@ -99,19 +99,29 @@ contract Crowdsale is SafeMath, owned {
     }
 
     function() external isOpen isUnpaused payable {
-        require(!isReachedHardCap());
-        owner.transfer(msg.value);
+        require(!isFinished());
+        uint amount = msg.value;
+        address backer = msg.sender;
 
-        uint tokens = tokenMultiplier * msg.value / pricePerTokenInWei;
-        uint bonusTokens = getBonus(msg.value, tokens);
+        uint remain = hardcap() - totalCollected;
+
+        if (remain < amount) {
+            backer.transfer(amount - remain);
+            amount = remain; 
+        }
+
+        uint tokens = tokenMultiplier * amount / pricePerTokenInWei;
+        uint bonusTokens = getBonus(amount, tokens);
         uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
         if (remainBonusTokens < bonusTokens) {
             bonusTokens = remainBonusTokens;
-        }
-        
+        }    
         tokens += bonusTokens;
-        token.mint(msg.sender, tokens, lockTime);
-        totalCollected += msg.value;
+        token.mint(backer, tokens, lockTime);
+
+
+        owner.transfer(amount);
+        totalCollected += amount;
         totalMintedBonusTokens += bonusTokens;
     }
 
