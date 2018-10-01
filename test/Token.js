@@ -8,9 +8,6 @@ contract('Token', function(accounts) {
         investor1 = accounts[2]
         investor2 = accounts[3]
         investor3 = accounts[4]
-        unlockedTime = 1537833600 // 09/25/2018 12:00am
-        lockedTime1 = 1546300800 // 01/01/2019 12:00am
-        lockedTime2 = 1548979200 // 02/01/2019 12:00am
         nzt = await Token.new({from: owner})
     })
 
@@ -23,10 +20,15 @@ contract('Token', function(accounts) {
         assert.equal(await nzt.owner(), newOwner)
     })
 
-    it('transfers tokens after mining with unlocked time', async function() {
-    	await nzt.mint(investor1, 0.1e20, unlockedTime, {from: owner})
+    it('transfers tokens after set unlocked', async function() {
+    	await nzt.mint(investor1, 0.1e20, {from: owner})
     	assert.equal(await nzt.balanceOf(investor1), 0.1e20)
-    	assert.equal(await nzt.isUnlocked(investor1), true)
+
+        assert.equal(await nzt.isUnlocked(), false)
+
+        await nzt.setUnlocked({from: owner})
+    	
+        assert.equal(await nzt.isUnlocked(), true)
 
     	await nzt.transfer(investor2, 0.5e19, {from: investor1})
     	assert.equal(await nzt.balanceOf(investor1), 0.5e19)
@@ -34,10 +36,15 @@ contract('Token', function(accounts) {
     	assert.equal(await nzt.totalSupply(), 0.1e20)
     })
 
-    it('transfers allowed tokens after mining with unlocked time from ', async function() {
-        await nzt.mint(investor1, 0.1e20, unlockedTime, {from: owner})
+    it('transfers allowed tokens after set unlocked', async function() {
+        await nzt.mint(investor1, 0.1e20, {from: owner})
         assert.equal(await nzt.balanceOf(investor1), 0.1e20)
-        assert.equal(await nzt.isUnlocked(investor1), true)
+        
+        assert.equal(await nzt.isUnlocked(), false)
+
+        await nzt.setUnlocked({from: owner})
+        
+        assert.equal(await nzt.isUnlocked(), true)
 
         await nzt.approve(investor2, 0.5e19, {from: investor1})
         await nzt.transferFrom(investor1, investor3, 0.5e19, {from: investor2})
@@ -48,10 +55,10 @@ contract('Token', function(accounts) {
         assert.equal(await nzt.totalSupply(), 0.1e20)
     })
 
-    it('tries to transfer allowed tokens after mining with unlocked time from ', async function() {
-        await nzt.mint(investor1, 0.1e20, lockedTime1, {from: owner})
+    it('tries to transfer allowed tokens when unlocked', async function() {
+        await nzt.mint(investor1, 0.1e20, {from: owner})
         assert.equal(await nzt.balanceOf(investor1), 0.1e20)
-        assert.equal(await nzt.isUnlocked(investor1), false)
+        assert.equal(await nzt.isUnlocked(), false)
 
         await nzt.approve(investor2, 0.5e19, {from: investor1})
 
@@ -67,10 +74,10 @@ contract('Token', function(accounts) {
         assert.equal(await nzt.totalSupply(), 0.1e20)
     })
 
-    it('tries to transfer tokens after mining with locked time', async function() {
-    	await nzt.mint(investor1, 0.1e20, lockedTime1, {from: owner})
+    it('tries to transfer tokens when unlocked', async function() {
+    	await nzt.mint(investor1, 0.1e20, {from: owner})
     	assert.equal(await nzt.balanceOf(investor1), 0.1e20)
-        assert.equal(await nzt.isUnlocked(investor1), false)
+        assert.equal(await nzt.isUnlocked(), false)
 
         try {
             await nzt.transfer(investor2, 0.5e19, {from: investor1})
@@ -83,22 +90,14 @@ contract('Token', function(accounts) {
     	assert.equal(await nzt.totalSupply(), 0.1e20)
     })
 
-    it('mints tokens with different lock time', async function() {
-    	await nzt.mint(investor1, 0.1e20, lockedTime1, {from: owner})
-    	assert.equal(await nzt.getUnlockTime(investor1), lockedTime1)
-
-    	await nzt.mint(investor1, 0.1e20, lockedTime2, {from: owner})
-    	assert.equal(await nzt.getUnlockTime(investor1), lockedTime2)
-    })
-
     it('can not mints tokens after finilize', async function() {
-    	await nzt.mint(investor1, 0.1e20, unlockedTime, {from: owner})
+    	await nzt.mint(investor1, 0.1e20, {from: owner})
     	assert.equal(await nzt.balanceOf(investor1), 0.1e20)
     	assert.equal(await nzt.totalSupply(), 0.1e20)
 
     	await nzt.mintingFinish({from: owner})
     	try {
-            await nzt.mint(investor2, 0.1e20, unlockedTime, {from: owner})
+            await nzt.mint(investor2, 0.1e20, {from: owner})
         } catch (error) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert')
         }

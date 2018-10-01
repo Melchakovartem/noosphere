@@ -13,9 +13,8 @@ contract CrowdsaleTestHelper is Crowdsale
     	                         address nodes, 
     	                         address team, 
     	                         uint start, 
-    	                         uint end,
-    	                         uint lock) public
-        Crowdsale(foundation, advisers, nodes, team, start, end, lock) {
+    	                         uint end) public
+        Crowdsale(foundation, advisers, nodes, team, start, end) {
         }
 
     function getCurrentTime() internal constant returns (uint) {

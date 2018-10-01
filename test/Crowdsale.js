@@ -5,7 +5,6 @@ contract('Crowdsale', function(accounts) {
 
 	const startTime = 10000;
     const endTime = startTime + 10* 60*60*24;
-    const lockTime =  100000;
     const pricePerTokenInWei = 37850000000000;
     const totalBonusTokens = 6225450000000000000000;
     const hardCap = 255 * (10 ** 18);
@@ -45,7 +44,7 @@ contract('Crowdsale', function(accounts) {
         const role = getRoles();
         const crowdsale = await Crowdsale.new(role.foundation, role.advisers, 
                                               role.nodes, role.team, startTime, 
-                                              endTime, lockTime, {from: role.owner});    
+                                              endTime, {from: role.owner});    
         const crowdsaleAddress = await crowdsale.address;
         const token = await Token.at(await crowdsale.token());
         return [crowdsale, crowdsaleAddress, token, role];

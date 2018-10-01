@@ -4,7 +4,7 @@ import "./owned.sol";
 import "./Token.sol";
 import "./SafeMath.sol";
 
-contract Crowdsale is SafeMath, owned {
+contract Crowdsale is SafeMath, Owned {
 
     struct Pool {
         address multisig;
@@ -22,12 +22,10 @@ contract Crowdsale is SafeMath, owned {
 
     uint public startTime; 
     uint public endTime;
-    uint public lockTime;
     
     bool public paused = false;
+
     uint public totalMintedBonusTokens = 0;
-    uint public pricePerTokenInWei = 3785000000000000;
-    uint public tokenMultiplier = 10 ** 18;
 
     Token public token = new Token();
 
@@ -43,7 +41,7 @@ contract Crowdsale is SafeMath, owned {
     
     function Crowdsale(address foundation, address advisers, 
                        address nodes, address team, 
-                       uint start, uint end, uint lockTime) {
+                       uint start, uint end) {
         owner = msg.sender;
         multisigFoundation = foundation;
         multisigAdvisers = advisers;
@@ -108,21 +106,21 @@ contract Crowdsale is SafeMath, owned {
         tokenDistribution();
 
         for (uint256 i = 0; i < pools.length; i++) {
-            token.mint(pools[i].multisig, tokensForDistribution * pools[i].percent / 100, lockTime);
+            token.mint(pools[i].multisig, tokensForDistribution * pools[i].percent / 100);
         }
 
         token.mintingFinish();
     }
 
     function mintTokens(uint amount, address backer) private {
-        uint tokens = tokenMultiplier * amount / pricePerTokenInWei;
+        uint tokens = token.tokenMultiplier() * amount / token.pricePerTokenInWei();
         uint bonusTokens = getBonus(amount, tokens);
         uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
         if (remainBonusTokens < bonusTokens) {
             bonusTokens = remainBonusTokens;
         }    
         tokens += bonusTokens;
-        token.mint(backer, tokens, lockTime);
+        token.mint(backer, tokens);
         totalMintedBonusTokens += bonusTokens;
     }
 

@@ -9,20 +9,24 @@ contract ERC223ReceivingContract {
     function tokenFallback(address _from, uint _value, bytes _data) public;
 }
 
-contract Token is ERC20, ERC223, owned, SafeMath 
+contract Token is ERC20, ERC223, Owned, SafeMath 
 {
   string public constant symbol = "NZT";
   string public constant name = "NZT";
   uint8 public constant decimals = 18;
+
   bool public mintingFinished = false;
+  bool public unlocked = false;
+
+  uint public pricePerTokenInWei = 3785000000000000;
+
+  uint public tokenMultiplier = 10 ** 18;
 
   uint256 _totalSupply = 0;
 
   uint256 _totalCollected = 0;
  
   mapping(address => uint256) balances;
-
-  mapping(address => uint256) lockedTillTime;
  
   mapping(address => mapping (address => uint256)) allowed;
 
@@ -43,16 +47,16 @@ contract Token is ERC20, ERC223, owned, SafeMath
     return balances[_owner];
   }
 
-  function getUnlockTime(address _owner) public constant returns (uint256 unlockTime) {
-    return lockedTillTime[_owner];
-  }
-
-  function isUnlocked(address _owner) public constant returns (bool unlocked) {
-    return lockedTillTime[_owner] < now;
-  }
-
   function mintingFinish() public onlyOwner {
     mintingFinished = true;
+  }
+  
+  function isUnlocked() public constant returns (bool) {
+    return unlocked;
+  }
+
+  function setUnlocked() public onlyOwner {
+    unlocked = true;
   }
 
   function addCollected(uint amount) public onlyOwner {
@@ -74,7 +78,7 @@ contract Token is ERC20, ERC223, owned, SafeMath
   }
 
   function transfer(address _to, uint256 _amount, bytes _data) public  returns (bool success) {
-    require(isUnlocked(msg.sender));
+    require(isUnlocked());
 
     balances[msg.sender] = safeSub(balances[msg.sender], _amount);
     balances[_to] = safeAdd(balances[_to], _amount);
@@ -89,7 +93,7 @@ contract Token is ERC20, ERC223, owned, SafeMath
   }
  
   function transferFrom(address _from, address _to, uint256 _amount) public returns (bool success) {
-    require(isUnlocked(_from));
+    require(isUnlocked());
 
     uint _allowance = allowed[_from][msg.sender];
 
@@ -112,15 +116,10 @@ contract Token is ERC20, ERC223, owned, SafeMath
     return allowed[_owner][_spender];
   }
 
-  function mint(address target, uint256 mintedAmount, uint256 lockTime) public canMint onlyOwner {
+  function mint(address target, uint256 mintedAmount) public canMint onlyOwner {
     require(mintedAmount > 0);
 
     balances[target] = safeAdd(balances[target], mintedAmount);
     _totalSupply = safeAdd(_totalSupply, mintedAmount);
-
-    if (lockedTillTime[target] < lockTime)
-    {
-      lockedTillTime[target] = lockTime;
-    }
   }
 }
