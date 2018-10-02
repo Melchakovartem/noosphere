@@ -28,7 +28,7 @@ contract Crowdsale is SafeMath, Owned {
     Token public token;
 
     modifier isOpen {
-        require(getCurrentTime() > startTime && getCurrentTime() < endTime);
+        require(isOpened());
         _;
     }
 
@@ -73,8 +73,12 @@ contract Crowdsale is SafeMath, Owned {
         return token.totalCollected() >= hardcap();
     }
 
-    function isFinished() public constant returns (bool finished) {
-        return   getCurrentTime() > endTime  || isReachedHardCap();
+    function isOpened() public constant returns (bool) {
+        return getCurrentTime() > startTime && getCurrentTime() < endTime;
+    }
+
+    function isFinishedICO() public constant returns (bool finished) {
+        return isReachedHardCap();
     }
 
     function isAllowableAmount(uint amount) public constant returns (bool) {
@@ -104,7 +108,7 @@ contract Crowdsale is SafeMath, Owned {
     }
 
     function setIcoSucceeded() public onlyOwner {
-        require(isFinished());
+        require(isFinishedICO());
 
         uint tokensForDistribution = token.totalSupply() * 100 / 32;
 
@@ -143,7 +147,7 @@ contract Crowdsale is SafeMath, Owned {
     }
 
     function() external isOpen isUnpaused payable {
-        require(!isFinished());
+        require(!isFinishedICO());
         require(isAllowableAmount(msg.value));
         
         uint amount = msg.value;

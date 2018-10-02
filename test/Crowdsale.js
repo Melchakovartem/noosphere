@@ -30,6 +30,10 @@ contract('Crowdsale', function(accounts) {
     	return eth / 0.003785; 
     }
 
+    function correctRounding(amount) {
+        return Math.round((amount) / Math.pow(10,10)) * Math.pow(10, 10); //solution for rounding problems
+    }
+
     function getTokensDistribution(amount) {
         tokensForDistribution = amount * 100 / 32;
         distribution = {};
@@ -262,27 +266,6 @@ contract('Crowdsale', function(accounts) {
 
     })
 
-    it('distributes tokens when ico succeded', async function(){
-        ethInvest = ETH(24.224);
-        purchasedTokens = getPurchasedTokens(ethInvest);
-        bonusTokens = purchasedTokens * 0.15;
-        totalTokens = purchasedTokens + bonusTokens;
-
-        await crowdsale.setTime(startTime + 10, {from: role.owner});
-
-        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
-
-        distribution = getTokensDistribution(totalTokens);
-
-        await crowdsale.setTime(endTime + 10, {from: role.owner});
-
-        await crowdsale.setIcoSucceeded({from: role.owner});
-
-        assert.equal(await token.balanceOf(role.foundation), distribution["foundation"]);
-        assert.equal(await token.balanceOf(role.advisers), distribution["advisers"]);
-        assert.equal(await token.balanceOf(role.nodes), distribution["nodes"]);
-        assert.equal(await token.balanceOf(role.team), distribution["team"]);
-    })
 
     it('returns remaining money when hard cap is reached', async function(){
         ethInvest1 = ETH(251.215);
@@ -301,7 +284,7 @@ contract('Crowdsale', function(accounts) {
         assert.equal(await token.balanceOf(role.investor2), totalTokens2);
         assert.equal(await token.totalCollected(), ETH(255));
 
-        totalBalanceOwner = balanceOwner + hardCap;
+        totalBalanceOwner = correctRounding(balanceOwner + hardCap);
         assert.equal(web3.eth.getBalance(role.owner), totalBalanceOwner);
     })
 

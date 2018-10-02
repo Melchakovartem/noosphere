@@ -25,4 +25,24 @@ contract RoundATestHelper is RoundA
         m_time = time;
     }
 
+    function hardcap() public pure returns (uint256) {
+        return 255 ether; 
+    }
+
+    function totalBonusTokens() public constant returns (uint256) {
+        return 6225450000000000000000;
+    }
+
+    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
+        uint bonus = 0;
+
+        if (money >= 2.5 ether) {
+            bonus = tokens * 15 / 100;
+        }
+        if (money >= 0.5 ether && money < 2.5 ether) {
+            bonus = tokens * 20 / 100;
+        }
+        return bonus;
+    }
+
 }
