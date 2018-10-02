@@ -9,6 +9,7 @@ contract('RoundA', function(accounts) {
     const startTimeRoundB = 100000;
     const endTimeRoundB = startTimeRoundB + 100;
     const totalBonusTokens = 6225450000000000000000;
+    const hardCap = 255 * (10 ** 18);
 
     function getRoles() {
         return {
@@ -62,6 +63,100 @@ contract('RoundA', function(accounts) {
 
     it('has an owner', async function () {
         assert.equal(await roundA.owner(), role.owner);
+    })
+
+    it('does not buy tokens when hard cap is reached', async function() {
+        ethInvest1 = ETH(255);
+        ethInvest2 = ETH(0.3);
+
+        await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
+        await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest1});
+
+        try {
+           await roundA.sendTransaction({from: role.investor2, to: addressRoundA, value: ethInvest2});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+
+        assert.equal(await token.balanceOf(role.investor2), 0);
+        assert.equal(await token.totalCollected(), ethInvest1);
+    })
+
+    it('recievs bonus 15% tokens when invest >= 250 ETH', async function() {
+        ethInvest = ETH(3.785);
+        purchasedTokens = getPurchasedTokens(ethInvest);
+        bonusTokens = purchasedTokens * 0.15;
+        totalTokens = bonusTokens + purchasedTokens;
+
+        await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
+
+        await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
+
+        assert.equal(await token.balanceOf(role.investor1), totalTokens);
+        assert.equal(await token.totalSupply(), totalTokens);
+        assert.equal(await token.totalCollected(), ethInvest);
+    })
+
+    it('recievs bonus 20% tokens when 250 > invest > 50 ETH and ', async function() {
+        ethInvest = ETH(0.757);
+        purchasedTokens = getPurchasedTokens(ethInvest);
+        bonusTokens = purchasedTokens * 0.20;
+        totalTokens = bonusTokens + purchasedTokens;
+
+        await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
+
+        await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
+
+        assert.equal(await token.balanceOf(role.investor1), totalTokens);
+        assert.equal(await token.totalSupply(), totalTokens);
+        assert.equal(await token.totalCollected(), ethInvest);
+    })
+
+    it('does not recieve bonus tokens because bonus tokens is ended ', async function() {
+        ethInvest1 = ETH(189.25);
+        ethInvest2 = ETH(3.785);
+
+        purchasedTokens1 = getPurchasedTokens(ethInvest1);
+        purchasedTokens2 = getPurchasedTokens(ethInvest2);
+        bonusTokens1 = totalBonusTokens;
+        totalTokens1 = purchasedTokens1 + bonusTokens1;
+
+        await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
+
+        await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest1});
+
+        totalBonus = await roundA.totalBonusTokens();
+
+        assert.equal(await roundA.totalMintedBonusTokens(), totalBonusTokens);
+
+        await roundA.sendTransaction({from: role.investor2, to: addressRoundA, value: ethInvest2});
+        
+        assert.equal(await token.balanceOf(role.investor2), purchasedTokens2);
+        
+        assert.equal(await roundA.totalMintedBonusTokens(), totalBonusTokens);
+
+    })
+
+
+    it('returns remaining money when hard cap is reached', async function(){
+        ethInvest1 = ETH(251.215);
+        ethInvest2 = ETH(4.785);
+
+        await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
+        balanceOwner = Number(web3.eth.getBalance(role.owner));
+
+        purchasedTokens2 = getPurchasedTokens(ETH(3.785));
+        totalTokens2 = purchasedTokens2;
+
+        
+        await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest1});
+        await roundA.sendTransaction({from: role.investor2, to: addressRoundA, value: ethInvest2});
+        
+        assert.equal(await token.balanceOf(role.investor2), totalTokens2);
+        assert.equal(await token.totalCollected(), ETH(255));
+
+        totalBalanceOwner = rounding(balanceOwner + hardCap);
+        assert.equal(web3.eth.getBalance(role.owner), totalBalanceOwner);
     })
 
     it('changes owner of roundB when starts roundB', async function () {

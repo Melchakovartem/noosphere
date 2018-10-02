@@ -7,7 +7,6 @@ contract('Crowdsale', function(accounts) {
     const endTime = startTime + 10* 60*60*24;
     const pricePerTokenInWei = 37850000000000;
     const totalBonusTokens = 6225450000000000000000;
-    const hardCap = 255 * (10 ** 18);
 
     function getRoles() {
         return {
@@ -28,21 +27,6 @@ contract('Crowdsale', function(accounts) {
 
     function getPurchasedTokens(eth) {
     	return eth / 0.003785; 
-    }
-
-    function correctRounding(amount) {
-        return Math.round((amount) / Math.pow(10,10)) * Math.pow(10, 10); //solution for rounding problems
-    }
-
-    function getTokensDistribution(amount) {
-        tokensForDistribution = amount * 100 / 32;
-        distribution = {};
-
-        distribution["foundation"] = tokensForDistribution * 29 / 100;
-        distribution["advisers"] = tokensForDistribution * 6 / 100;
-        distribution["nodes"] = tokensForDistribution * 26 / 100;
-        distribution["team"] = Math.round((tokensForDistribution * 7 / 100) / Math.pow(10,8)) * Math.pow(10,8); //solution for rounding problems
-        return distribution;
     }
 
     async function instantiate() {
@@ -192,100 +176,6 @@ contract('Crowdsale', function(accounts) {
     	assert.equal(await token.balanceOf(role.investor1), 0);
     	assert.equal(await token.totalSupply(), 0);
     	assert.equal(await token.totalCollected(), 0);
-    })
-
-    it('does not buy tokens when hard cap is reached', async function() {
-    	ethInvest1 = ETH(255);
-    	ethInvest2 = ETH(0.3);
-
-    	await crowdsale.setTime(startTime + 10, {from: role.owner});
-        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
-
-    	try {
-           await crowdsale.sendTransaction({from: role.investor2, to: crowdsaleAddress, value: ethInvest2});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
-
-    	assert.equal(await token.balanceOf(role.investor2), 0);
-    	assert.equal(await token.totalCollected(), ethInvest1);
-    })
-
-    it('recievs bonus 15% tokens when invest >= 250 ETH', async function() {
-    	ethInvest = ETH(3.785);
-    	purchasedTokens = getPurchasedTokens(ethInvest);
-    	bonusTokens = purchasedTokens * 0.15;
-    	totalTokens = bonusTokens + purchasedTokens;
-
-    	await crowdsale.setTime(startTime + 10, {from: role.owner});
-
-    	await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
-
-    	assert.equal(await token.balanceOf(role.investor1), totalTokens);
-    	assert.equal(await token.totalSupply(), totalTokens);
-    	assert.equal(await token.totalCollected(), ethInvest);
-    })
-
-    it('recievs bonus 20% tokens when 250 > invest > 50 ETH and ', async function() {
-    	ethInvest = ETH(0.757);
-    	purchasedTokens = getPurchasedTokens(ethInvest);
-    	bonusTokens = purchasedTokens * 0.20;
-    	totalTokens = bonusTokens + purchasedTokens;
-
-    	await crowdsale.setTime(startTime + 10, {from: role.owner});
-
-    	await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
-
-    	assert.equal(await token.balanceOf(role.investor1), totalTokens);
-    	assert.equal(await token.totalSupply(), totalTokens);
-    	assert.equal(await token.totalCollected(), ethInvest);
-    })
-
-    it('does not recieve bonus tokens because bonus tokens is ended ', async function() {
-    	ethInvest1 = ETH(189.25);
-        ethInvest2 = ETH(3.785);
-
-    	purchasedTokens1 = getPurchasedTokens(ethInvest1);
-        purchasedTokens2 = getPurchasedTokens(ethInvest2);
-    	bonusTokens1 = totalBonusTokens;
-    	totalTokens1 = purchasedTokens1 + bonusTokens1;
-
-    	await crowdsale.setTime(startTime + 10, {from: role.owner});
-
-    	await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
-
-        totalBonus = await crowdsale.totalBonusTokens();
-
-        assert.equal(await crowdsale.totalMintedBonusTokens(), totalBonusTokens);
-
-        await crowdsale.sendTransaction({from: role.investor2, to: crowdsaleAddress, value: ethInvest2});
-    	
-        assert.equal(await token.balanceOf(role.investor2), purchasedTokens2);
-    	
-        assert.equal(await crowdsale.totalMintedBonusTokens(), totalBonusTokens);
-
-    })
-
-
-    it('returns remaining money when hard cap is reached', async function(){
-        ethInvest1 = ETH(251.215);
-        ethInvest2 = ETH(4.785);
-
-        await crowdsale.setTime(startTime + 10, {from: role.owner});
-        balanceOwner = Number(web3.eth.getBalance(role.owner));
-
-        purchasedTokens2 = getPurchasedTokens(ETH(3.785));
-        totalTokens2 = purchasedTokens2;
-
-        
-        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
-        await crowdsale.sendTransaction({from: role.investor2, to: crowdsaleAddress, value: ethInvest2});
-        
-        assert.equal(await token.balanceOf(role.investor2), totalTokens2);
-        assert.equal(await token.totalCollected(), ETH(255));
-
-        totalBalanceOwner = correctRounding(balanceOwner + hardCap);
-        assert.equal(web3.eth.getBalance(role.owner), totalBalanceOwner);
     })
 
 })

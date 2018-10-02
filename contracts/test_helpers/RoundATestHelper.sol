@@ -29,6 +29,10 @@ contract RoundATestHelper is RoundA
         return 255 ether; 
     }
 
+    function minValue() public pure returns (uint256) {
+        return 0.2 ether; 
+    }
+
     function totalBonusTokens() public constant returns (uint256) {
         return 6225450000000000000000;
     }

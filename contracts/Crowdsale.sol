@@ -124,6 +124,7 @@ contract Crowdsale is SafeMath, Owned {
     function mintTokens(uint amount, address backer) private {
         uint tokens = token.tokenMultiplier() * amount / token.pricePerTokenInWei();
         uint bonusTokens = getBonus(amount, tokens);
+        
         uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
         if (remainBonusTokens < bonusTokens) {
             bonusTokens = remainBonusTokens;
