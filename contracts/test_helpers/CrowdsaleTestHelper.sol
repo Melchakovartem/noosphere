@@ -15,6 +15,7 @@ contract CrowdsaleTestHelper is Crowdsale
     	                         uint start, 
     	                         uint end) public
         Crowdsale(foundation, advisers, nodes, team, start, end) {
+            token = new Token();
         }
 
     function getCurrentTime() internal constant returns (uint) {

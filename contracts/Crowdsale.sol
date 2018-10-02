@@ -13,8 +13,6 @@ contract Crowdsale is SafeMath, Owned {
 
     Pool[] public pools;
 
-    address public owner;
-
     address public multisigFoundation;
     address public multisigAdvisers;
     address public multisigNodes;
@@ -27,7 +25,7 @@ contract Crowdsale is SafeMath, Owned {
 
     uint public totalMintedBonusTokens = 0;
 
-    Token public token = new Token();
+    Token public token;
 
     modifier isOpen {
         require(getCurrentTime() > startTime && getCurrentTime() < endTime);
@@ -75,8 +73,15 @@ contract Crowdsale is SafeMath, Owned {
         return token.totalCollected() >= hardcap();
     }
 
-    function isFinished() internal constant returns (bool finished) {
+    function isFinished() public constant returns (bool finished) {
         return   getCurrentTime() > endTime  || isReachedHardCap();
+    }
+
+    function isAllowableAmount(uint amount) public constant returns (bool) {
+        return amount >= minValue();
+    }
+
+    function deposit() public payable onlyOwner {
     }
 
     function tokenDistribution() private {
@@ -138,7 +143,8 @@ contract Crowdsale is SafeMath, Owned {
     }
 
     function() external isOpen isUnpaused payable {
-        require(!isFinished() && msg.value >= minValue());
+        require(!isFinished());
+        require(isAllowableAmount(msg.value));
         
         uint amount = msg.value;
         address backer = msg.sender;

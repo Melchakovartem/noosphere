@@ -17,7 +17,8 @@ contract('Crowdsale', function(accounts) {
            foundation: accounts[3],
            advisers: accounts[4],
            nodes: accounts[5],
-           team: accounts[6]
+           team: accounts[6],
+           newOwner: accounts[7]
         };
     }
 
@@ -76,6 +77,11 @@ contract('Crowdsale', function(accounts) {
 
     it('has token from crowdsale', async function () {
     	assert.equal(await crowdsale.token(), token.address);
+    })
+
+    it('changes an owner', async function () {
+        await crowdsale.changeOwner(role.newOwner, {from: role.owner});
+        assert.equal(await crowdsale.owner(), role.newOwner);
     })
 
     it('buys tokens', async function() {
