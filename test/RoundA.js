@@ -48,17 +48,16 @@ contract('RoundA', function(accounts) {
 
     async function instantiate() {
         const role = getRoles();
-        return role;
+        const roundA = await RoundA.new(role.foundation, role.advisers, 
+                                  role.nodes, role.team, startTimeRoundA, 
+                                  endTimeRoundA, {from: role.owner});
+        const addressRoundA = await roundA.address;
+        const token = await Token.at(await roundA.token());
+        return [roundA, addressRoundA, token, role];
     };
     
 	beforeEach('setup contract for each test', async function () {
-        role = await instantiate();
-        roundA = await RoundA.new(role.foundation, role.advisers, 
-                                  role.nodes, role.team, startTimeRoundA, 
-                                  endTimeRoundA, {from: role.owner});
-        addressRoundA = await roundA.address;
-        token = await Token.at(await roundA.token());
-        
+        [roundA, addressRoundA, token, role] = await instantiate();
     })
 
     it('has an owner', async function () {

@@ -5,8 +5,6 @@ contract('Crowdsale', function(accounts) {
 
 	const startTime = 10000;
     const endTime = startTime + 10* 60*60*24;
-    const pricePerTokenInWei = 37850000000000;
-    const totalBonusTokens = 6225450000000000000000;
 
     function getRoles() {
         return {
