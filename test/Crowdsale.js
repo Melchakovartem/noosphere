@@ -11,11 +11,12 @@ contract('Crowdsale', function(accounts) {
            owner: accounts[0],
            investor1: accounts[1],
            investor2: accounts[2],
-           foundation: accounts[3],
-           advisers: accounts[4],
-           nodes: accounts[5],
-           team: accounts[6],
-           newOwner: accounts[7]
+           investor3: accounts[3],
+           foundation: accounts[4],
+           advisers: accounts[5],
+           nodes: accounts[6],
+           team: accounts[7],
+           newOwner: accounts[8]
         };
     }
 
@@ -39,6 +40,7 @@ contract('Crowdsale', function(accounts) {
     
 	beforeEach('setup contract for each test', async function () {
         [crowdsale, crowdsaleAddress, token, role] = await instantiate();
+        await crowdsale.acceptKYC([role.investor1, role.investor2], {from: role.owner});
     })
 
     it('has an owner', async function () {
@@ -176,6 +178,39 @@ contract('Crowdsale', function(accounts) {
     	assert.equal(await token.totalCollected(), 0);
     })
 
+    it('does not buy tokens when backer not accepted KYC', async function() {
+        ethInvest3 = ETH(0.3785);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        try {
+           await crowdsale.sendTransaction({from: role.investor3, to: crowdsaleAddress, value: ethInvest3});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+        
+        assert.equal(await token.balanceOf(role.investor3), 0);
+        assert.equal(await token.totalSupply(), 0);
+        assert.equal(await token.totalCollected(), 0);
+    })
+
+    it('does not buy tokens when KYC is declined for backer', async function() {
+        ethInvest1 = ETH(0.3785);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        await crowdsale.declineKYC(role.investor1, {from: role.owner});
+
+        try {
+           await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+        
+        assert.equal(await token.balanceOf(role.investor1), 0);
+        assert.equal(await token.totalSupply(), 0);
+        assert.equal(await token.totalCollected(), 0);
+    })
 })
 
 

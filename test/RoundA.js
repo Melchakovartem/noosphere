@@ -58,6 +58,7 @@ contract('RoundA', function(accounts) {
     
 	beforeEach('setup contract for each test', async function () {
         [roundA, addressRoundA, token, role] = await instantiate();
+        await roundA.acceptKYC([role.investor1, role.investor2], {from: role.owner});
     })
 
     it('has an owner', async function () {

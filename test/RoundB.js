@@ -60,6 +60,8 @@ contract('RoundB', function(accounts) {
         [roundA, addressRoundA, token, role] = await instantiate();
         ethInvest = ETH(254.997);
         tokenAddress = await token.address;
+        await roundA.acceptKYC([role.investor], {from: role.owner});
+
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
         await roundA.sendTransaction({from: role.investor, to: addressRoundA, value: ethInvest});
@@ -69,6 +71,8 @@ contract('RoundB', function(accounts) {
         await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
 
         roundB = await RoundB.at(await roundA.roundB());
+
+        await roundB.acceptKYC([role.investor1, role.investor2], {from: role.owner});
 
         addressRoundB = await roundB.address;
     })

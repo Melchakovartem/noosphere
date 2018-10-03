@@ -27,6 +27,8 @@ contract Crowdsale is SafeMath, Owned {
 
     Token public token;
 
+    mapping(address => bool) acceptedKYC;
+
     modifier isOpen {
         require(isOpened());
         _;
@@ -83,6 +85,20 @@ contract Crowdsale is SafeMath, Owned {
 
     function isAllowableAmount(uint amount) public constant returns (bool) {
         return amount >= minValue();
+    }
+
+    function acceptKYC(address[] backers) public onlyOwner {
+        for (var i = 0; i < backers.length; i++) {
+           acceptedKYC[backers[i]] = true;
+        }
+    }
+
+    function declineKYC(address backer) public onlyOwner {
+        acceptedKYC[backer] = false;
+    }
+
+    function isAcceptedKYC(address backer) public constant returns (bool) {
+        return acceptedKYC[backer];
     }
 
     function deposit() public payable onlyOwner {
@@ -151,7 +167,7 @@ contract Crowdsale is SafeMath, Owned {
 
     function() external isOpen isUnpaused payable {
         require(!isFinishedICO());
-        require(isAllowableAmount(msg.value));
+        require(isAllowableAmount(msg.value) && isAcceptedKYC(msg.sender));
         
         uint amount = msg.value;
         address backer = msg.sender;
