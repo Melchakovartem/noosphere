@@ -1,12 +1,15 @@
 pragma solidity ^0.4.15;
 
 import '../campaigns/RoundA.sol';
+import './RoundBTestHelper.sol';
 
 
 ///DONT use it in production!
 contract RoundATestHelper is RoundA
 {
     uint m_time;
+
+    RoundBTestHelper public roundB;
 
     function RoundATestHelper(address foundation, 
                                  address advisers, 
@@ -16,6 +19,14 @@ contract RoundATestHelper is RoundA
                                  uint end) public
         RoundA(foundation, advisers, nodes, team, start, end) {
         }
+
+    function startRoundB(uint startRoundB, uint endRoundB) public onlyOwner {
+        require(getCurrentTime() > endTime);
+        roundB = new RoundBTestHelper(token, multisigFoundation, multisigAdvisers, 
+                            multisigNodes, multisigTeam, startRoundB, endRoundB);
+        roundB.changeOwner(owner);
+        token.changeOwner(roundB);
+    }
 
     function getCurrentTime() internal constant returns (uint) {
         return m_time;
@@ -39,6 +50,7 @@ contract RoundATestHelper is RoundA
 
     function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
         uint bonus = 0;
+        uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
 
         if (money >= 2.5 ether) {
             bonus = tokens * 15 / 100;
@@ -46,6 +58,11 @@ contract RoundATestHelper is RoundA
         if (money >= 0.5 ether && money < 2.5 ether) {
             bonus = tokens * 20 / 100;
         }
+
+        if (remainBonusTokens < bonus) {
+            bonus = remainBonusTokens;
+        } 
+
         return bonus;
     }
 

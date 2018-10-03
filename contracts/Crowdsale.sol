@@ -95,17 +95,6 @@ contract Crowdsale is SafeMath, Owned {
          pools.push(Pool({multisig: multisigTeam, percent: 7}));
     }
     
-    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
-        uint bonus = 0;
-
-        if (money >= 250 ether) {
-            bonus = tokens * 15 / 100;
-        }
-        if (money >= 50 ether && money < 250) {
-            bonus = tokens * 20 / 100;
-        }
-        return bonus;
-    }
 
     function setIcoSucceeded() public onlyOwner {
         require(isFinishedICO());
@@ -121,14 +110,28 @@ contract Crowdsale is SafeMath, Owned {
         token.mintingFinish();
     }
 
+    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
+        uint bonus = 0;
+        uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
+
+        if (money >= 250 ether) {
+            bonus = tokens * 15 / 100;
+        }
+        if (money >= 50 ether && money < 250) {
+            bonus = tokens * 20 / 100;
+        }
+
+        if (remainBonusTokens < bonus) {
+            bonus = remainBonusTokens;
+        } 
+
+        return bonus;
+    }
+
     function mintTokens(uint amount, address backer) private {
         uint tokens = token.tokenMultiplier() * amount / token.pricePerTokenInWei();
         uint bonusTokens = getBonus(amount, tokens);
-        
-        uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
-        if (remainBonusTokens < bonusTokens) {
-            bonusTokens = remainBonusTokens;
-        }    
+               
         tokens += bonusTokens;
         token.mint(backer, tokens);
         totalMintedBonusTokens += bonusTokens;

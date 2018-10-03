@@ -16,9 +16,10 @@ contract RoundA is Crowdsale
         	token = new Token();
         }
 
-    function startRoundB(uint start, uint end) public onlyOwner {
+    function startRoundB(uint startRoundB, uint endRoundB) public onlyOwner {
     	require(getCurrentTime() > endTime);
-    	roundB = new RoundB(token, multisigFoundation, multisigAdvisers, multisigNodes, multisigTeam, start, end);
+    	roundB = new RoundB(token, multisigFoundation, multisigAdvisers, 
+                            multisigNodes, multisigTeam, startRoundB, endRoundB);
     	roundB.changeOwner(owner);
     	token.changeOwner(roundB);
     }

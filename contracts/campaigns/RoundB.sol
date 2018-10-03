@@ -4,7 +4,7 @@ import '../Crowdsale.sol';
 
 contract RoundB is Crowdsale 
 {
-    function RoundB(address token,
+    function RoundB(address tokenAddress,
     	            address foundation, 
     	            address advisers, 
     	            address nodes, 
@@ -12,7 +12,7 @@ contract RoundB is Crowdsale
     	            uint start, 
     	            uint end) public
         Crowdsale(foundation, advisers, nodes, team, start, end) {
-        	token = Token(token);
+        	token = Token(tokenAddress);
         }
 
     function minValue() public pure returns (uint256) {
