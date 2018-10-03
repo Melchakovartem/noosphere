@@ -1,6 +1,6 @@
 pragma solidity ^0.4.15;
 
-import "./owned.sol";
+import "./Owned.sol";
 import "./Token.sol";
 import "./SafeMath.sol";
 
@@ -130,8 +130,7 @@ contract Crowdsale is SafeMath, Owned {
 
     function mintTokens(uint amount, address backer) private {
         uint tokens = token.tokenMultiplier() * amount / token.pricePerTokenInWei();
-        uint bonusTokens = getBonus(amount, tokens);
-               
+        uint bonusTokens = getBonus(amount, tokens);       
         tokens += bonusTokens;
         token.mint(backer, tokens);
         totalMintedBonusTokens += bonusTokens;

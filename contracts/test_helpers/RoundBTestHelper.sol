@@ -44,10 +44,4 @@ contract RoundBTestHelper is RoundB
         return 0;
     }
 
-    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
-        uint bonus = 0;
-
-        return bonus;
-    }
-
 }

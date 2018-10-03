@@ -14,6 +14,9 @@ contract RoundB is Crowdsale
         Crowdsale(foundation, advisers, nodes, team, start, end) {
         	token = Token(tokenAddress);
         }
+    function isFinishedICO() public constant returns (bool finished) {
+        return isReachedHardCap() || getCurrentTime() > endTime;
+    }
 
     function minValue() public pure returns (uint256) {
         return 0.1 ether;
