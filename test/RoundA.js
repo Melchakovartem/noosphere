@@ -10,6 +10,7 @@ contract('RoundA', function(accounts) {
     const endTimeRoundB = startTimeRoundB + 100;
     const totalBonusTokens = 6225450000000000000000;
     const hardCap = 255 * (10 ** 18);
+    const nilAddress = 0x0000000000000000000000000000000000000000;
 
     function getRoles() {
         return {
@@ -50,7 +51,7 @@ contract('RoundA', function(accounts) {
         const role = getRoles();
         const roundA = await RoundA.new(role.foundation, role.advisers, 
                                   role.nodes, role.team, startTimeRoundA, 
-                                  endTimeRoundA, {from: role.owner});
+                                  endTimeRoundA, {from: role.owner, gas: 6700000});
         const addressRoundA = await roundA.address;
         const token = await Token.at(await roundA.token());
         return [roundA, addressRoundA, token, role];
@@ -189,6 +190,7 @@ contract('RoundA', function(accounts) {
         }
 
         assert.equal(await token.owner(), addressRoundA);
+        assert.equal(await roundA.roundB(), nilAddress);
     })
 
     it('does not start roundB when hard cap is reached', async function () {
@@ -203,35 +205,22 @@ contract('RoundA', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
         assert.equal(await roundA.isFinishedICO(), true);
-    })
-
-    it('does not start roundB when has backers with not accepted KYC', async function () {
-        ethInvest = ETH(0.3785);
-        purchasedTokens = getPurchasedTokens(ethInvest);
-        await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
-
-        await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
-
-        try {
-           await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
-        assert.equal(await roundA.totalLockedTokens(), purchasedTokens);
+        assert.equal(await roundA.roundB(), nilAddress);
     })
 
     it('distributes tokens when hard cap is reached', async function(){
         ethInvest = ETH(255);
         purchasedTokens = getPurchasedTokens(ethInvest);
-        
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
 
-        await roundA.acceptKYC(role.investor1, {from: role.owner});
+        lockedTokens = Number(await roundA.totalLockedTokens());
 
-        totalTokens = Number(await token.totalSupply()); 
+        totalSupply = Number(await token.totalSupply());
+
+        totalTokens = lockedTokens + totalSupply; 
 
         distribution = getTokensDistribution(totalTokens);
 
@@ -242,22 +231,6 @@ contract('RoundA', function(accounts) {
         assert.equal(rounding(await token.balanceOf(role.team)), rounding(distribution["team"]));
         assert.equal(rounding(await token.balanceOf(role.advisers)), rounding(distribution["advisers"]));
     })
-    
-    it('does not distribute tokens when has backers with not accepted KYC', async function(){
-        ethInvest = ETH(255);
-        purchasedTokens = getPurchasedTokens(ethInvest);
-        
-        await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
-
-        await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
-
-        try {
-           await roundA.setIcoSucceeded({from: role.owner});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
-    })
-
 })
 
 

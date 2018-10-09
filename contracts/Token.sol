@@ -22,6 +22,8 @@ contract Token is ERC20, ERC223, Owned, SafeMath
 
   uint public tokenMultiplier = 10 ** 18;
 
+  address public crowdsale;
+
   uint256 _totalSupply = 0;
 
   uint256 _totalCollected = 0;
@@ -32,6 +34,15 @@ contract Token is ERC20, ERC223, Owned, SafeMath
 
   modifier canMint() {
     require(!mintingFinished);
+    _;
+  }
+
+  function changeCrowdsale(address newCrowdsale) public onlyOwner {
+    crowdsale = newCrowdsale;
+  }
+
+  modifier onlyOwnerOrCrowdsale {
+    require(msg.sender == owner || msg.sender == crowdsale);
     _;
   }
  

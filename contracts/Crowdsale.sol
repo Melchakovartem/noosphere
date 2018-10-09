@@ -112,9 +112,9 @@ contract Crowdsale is SafeMath, Owned {
     
 
     function setIcoSucceeded() public onlyOwner {
-        require(isFinishedICO() && totalLockedTokens == 0);
+        require(isFinishedICO());
 
-        uint tokensForDistribution = token.totalSupply() * 100 / 32;
+        uint tokensForDistribution = (token.totalSupply() + totalLockedTokens) * 100 / 32;
 
         tokenDistribution();
 

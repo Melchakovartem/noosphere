@@ -50,7 +50,7 @@ contract('RoundB', function(accounts) {
         const role = getRoles();
         const roundA = await RoundA.new(role.foundation, role.advisers, 
                                   role.nodes, role.team, startTimeRoundA, 
-                                  endTimeRoundA, {from: role.owner});
+                                  endTimeRoundA, {from: role.owner, gas: 6700000});
         const addressRoundA = await roundA.address;
         const token = await Token.at(await roundA.token());
         return [roundA, addressRoundA, token, role];
