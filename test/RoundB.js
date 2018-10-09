@@ -60,7 +60,6 @@ contract('RoundB', function(accounts) {
         [roundA, addressRoundA, token, role] = await instantiate();
         ethInvest = ETH(254.997);
         tokenAddress = await token.address;
-        await roundA.acceptKYC([role.investor], {from: role.owner});
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
@@ -68,11 +67,11 @@ contract('RoundB', function(accounts) {
 
         await roundA.setTime(endTimeRoundA + 10, {from: role.owner});
 
+        await roundA.acceptKYC(role.investor, {from: role.owner});
+
         await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
 
         roundB = await RoundB.at(await roundA.roundB());
-
-        await roundB.acceptKYC([role.investor1, role.investor2], {from: role.owner});
 
         addressRoundB = await roundB.address;
     })
@@ -98,7 +97,7 @@ contract('RoundB', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
 
-        assert.equal(await token.balanceOf(role.investor2), 0);
+        assert.equal(await roundB.isLockableAmount(role.investor2), 0);
         assert.equal(await token.totalCollected(), hardCap);
     })
 
@@ -113,7 +112,7 @@ contract('RoundB', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
 
-        assert.equal(await token.balanceOf(role.investor1), 0);
+       assert.equal(await roundB.isLockableAmount(role.investor1), 0);
     })
 
     it('does not recieve bonus tokens', async function() {
@@ -124,7 +123,7 @@ contract('RoundB', function(accounts) {
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
         await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
 
-        assert.equal(await token.balanceOf(role.investor1), totalTokens);
+        assert.equal(await roundB.isLockableAmount(role.investor1), totalTokens);
     })
 
     it('distributes tokens when hard cap is reached', async function(){
@@ -134,6 +133,8 @@ contract('RoundB', function(accounts) {
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
 
         await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
+
+        await roundB.acceptKYC(role.investor1, {from: role.owner});
 
         totalTokens = Number(await token.totalSupply()); 
 
@@ -154,6 +155,8 @@ contract('RoundB', function(accounts) {
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
 
         await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
+
+        await roundB.acceptKYC(role.investor1, {from: role.owner});
 
         await roundB.setTime(endTimeRoundB + 10, {from: role.owner});
 

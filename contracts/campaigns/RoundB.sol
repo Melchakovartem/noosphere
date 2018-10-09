@@ -3,7 +3,7 @@ pragma solidity ^0.4.15;
 import '../Crowdsale.sol';
 
 contract RoundB is Crowdsale 
-{
+{   
     function RoundB(address tokenAddress,
     	            address foundation, 
     	            address advisers, 

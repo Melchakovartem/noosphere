@@ -40,7 +40,6 @@ contract('Crowdsale', function(accounts) {
     
 	beforeEach('setup contract for each test', async function () {
         [crowdsale, crowdsaleAddress, token, role] = await instantiate();
-        await crowdsale.acceptKYC([role.investor1, role.investor2], {from: role.owner});
     })
 
     it('has an owner', async function () {
@@ -72,20 +71,23 @@ contract('Crowdsale', function(accounts) {
         assert.equal(await crowdsale.owner(), role.newOwner);
     })
 
-    it('buys tokens', async function() {
+    it("deposits", async function() {
+        await crowdsale.deposit({from: role.owner, value: ETH(1)});
+        assert.equal(web3.eth.getBalance(crowdsale.address), ETH(1));
+    });
+
+    it('funds', async function() {
         ethInvest = ETH(0.3785);
         purchasedTokens = getPurchasedTokens(ethInvest);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
 
     	await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
-    	
-    	assert.equal(await token.balanceOf(role.investor1), purchasedTokens);
-    	assert.equal(await token.totalSupply(), purchasedTokens);
-    	assert.equal(await token.totalCollected(), ethInvest);
+        
+        assert.equal(await token.totalCollected(), ethInvest);
     })
 
-    it('does not buy tokens when ico on pause', async function() {
+    it('does not fund when ico on pause', async function() {
     	ethInvest = ETH(0.3785);
 
     	await crowdsale.setTime(startTime + 10, {from: role.owner});
@@ -98,12 +100,31 @@ contract('Crowdsale', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
         
-    	assert.equal(await token.balanceOf(role.investor1), 0);
-    	assert.equal(await token.totalSupply(), 0);
     	assert.equal(await token.totalCollected(), 0);
     })
 
-    it('does not buy tokens when fund < min value', async function() {
+    it('funds when ico on unpause', async function() {
+        ethInvest = ETH(0.3785);
+        purchasedTokens = getPurchasedTokens(ethInvest);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        await crowdsale.pause({from: role.owner});
+
+        try {
+            await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert')
+        }
+
+        await crowdsale.unpause({from: role.owner});
+
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
+
+        assert.equal(await token.totalCollected(), ethInvest);        
+    })
+
+    it('does not fund when money < min value', async function() {
         ethInvest = ETH(0.1);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
@@ -113,40 +134,11 @@ contract('Crowdsale', function(accounts) {
         } catch (error) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
-        
-        assert.equal(await token.balanceOf(role.investor1), 0);
-        assert.equal(await token.totalSupply(), 0);
+
         assert.equal(await token.totalCollected(), 0);
     })
 
-    it('buys tokens when ico on unpause', async function() {
-    	ethInvest = ETH(0.3785);
-    	purchasedTokens = getPurchasedTokens(ethInvest);
-
-    	await crowdsale.setTime(startTime + 10, {from: role.owner});
-
-    	await crowdsale.pause({from: role.owner});
-
-    	try {
-            await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert')
-        }
-
-        assert.equal(await token.balanceOf(role.investor1), 0);
-    	assert.equal(await token.totalSupply(), 0);
-    	assert.equal(await token.totalCollected(), 0);
-
-        await crowdsale.unpause({from: role.owner});
-
-        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
-
-    	assert.equal(await token.balanceOf(role.investor1), purchasedTokens);
-    	assert.equal(await token.totalSupply(), purchasedTokens);
-    	assert.equal(await token.totalCollected(), ethInvest);
-    })
-
-    it('does not buy tokens when ico not started', async function() {
+    it('does not fund when ico not started', async function() {
     	ethInvest = ETH(0.3785);
 
     	await crowdsale.setTime(startTime - 10, {from: role.owner});
@@ -157,12 +149,10 @@ contract('Crowdsale', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
         
-    	assert.equal(await token.balanceOf(role.investor1), 0);
-    	assert.equal(await token.totalSupply(), 0);
-    	assert.equal(await token.totalCollected(), 0);
+        assert.equal(await token.totalCollected(), 0);
     })
 
-    it('does not buy tokens when ico ended', async function() {
+    it('does not fund when ico ended', async function() {
     	ethInvest = ETH(0.3785);
 
     	await crowdsale.setTime(endTime + 10, {from: role.owner});
@@ -172,44 +162,54 @@ contract('Crowdsale', function(accounts) {
         } catch (error) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
-        
-    	assert.equal(await token.balanceOf(role.investor1), 0);
-    	assert.equal(await token.totalSupply(), 0);
-    	assert.equal(await token.totalCollected(), 0);
-    })
 
-    it('does not buy tokens when backer not accepted KYC', async function() {
-        ethInvest3 = ETH(0.3785);
-
-        await crowdsale.setTime(startTime + 10, {from: role.owner});
-
-        try {
-           await crowdsale.sendTransaction({from: role.investor3, to: crowdsaleAddress, value: ethInvest3});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
-        
-        assert.equal(await token.balanceOf(role.investor3), 0);
-        assert.equal(await token.totalSupply(), 0);
         assert.equal(await token.totalCollected(), 0);
     })
 
-    it('does not buy tokens when KYC is declined for backer', async function() {
+    it('locks tokens when fund and kyc not accepted', async function() {
         ethInvest1 = ETH(0.3785);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
 
-        await crowdsale.declineKYC(role.investor1, {from: role.owner});
-
-        try {
-           await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
         
         assert.equal(await token.balanceOf(role.investor1), 0);
         assert.equal(await token.totalSupply(), 0);
-        assert.equal(await token.totalCollected(), 0);
+        assert.equal(await token.totalCollected(), ethInvest1);
+        assert.equal(await crowdsale.totalLockedTokens(), purchasedTokens);
+        assert.equal(await crowdsale.isLockableAmount(role.investor1), purchasedTokens);
+    })
+
+    it('recieves tokens when backer is accepted KYC', async function() {
+        ethInvest1 = ETH(0.3785);
+        purchasedTokens = getPurchasedTokens(ethInvest1);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
+        
+        assert.equal(await token.balanceOf(role.investor1), 0);
+        assert.equal(await token.totalSupply(), 0);
+        assert.equal(await token.totalCollected(), ethInvest1);
+        assert.equal(await crowdsale.totalLockedTokens(), purchasedTokens);
+        assert.equal(await crowdsale.isLockableAmount(role.investor1), purchasedTokens);
+
+        await crowdsale.acceptKYC(role.investor1, {from: role.owner});
+
+        assert.equal(await token.balanceOf(role.investor1), purchasedTokens);
+        assert.equal(await token.totalSupply(), purchasedTokens);
+        assert.equal(await token.totalCollected(), ethInvest1);
+        assert.equal(await crowdsale.totalLockedTokens(), 0);
+        assert.equal(await crowdsale.isLockableAmount(role.investor1), 0);
+        
+    })
+
+    it('does not accept kyc for not backer', async function() {
+        try {
+           await crowdsale.acceptKYC(role.investor1, {from: role.owner});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
     })
 })
 

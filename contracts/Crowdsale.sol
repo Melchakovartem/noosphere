@@ -25,9 +25,11 @@ contract Crowdsale is SafeMath, Owned {
 
     uint public totalMintedBonusTokens = 0;
 
+    uint public totalLockedTokens = 0;
+
     Token public token;
 
-    mapping(address => bool) acceptedKYC;
+    mapping(address => uint256) lockedTokens;
 
     modifier isOpen {
         require(isOpened());
@@ -87,18 +89,15 @@ contract Crowdsale is SafeMath, Owned {
         return amount >= minValue();
     }
 
-    function acceptKYC(address[] backers) public onlyOwner {
-        for (var i = 0; i < backers.length; i++) {
-           acceptedKYC[backers[i]] = true;
-        }
+    function isLockableAmount(address backer) public constant returns (uint) {
+        return lockedTokens[backer];
     }
 
-    function declineKYC(address backer) public onlyOwner {
-        acceptedKYC[backer] = false;
-    }
-
-    function isAcceptedKYC(address backer) public constant returns (bool) {
-        return acceptedKYC[backer];
+    function acceptKYC(address backer) public onlyOwner {
+        require(lockedTokens[backer] > 0);
+        token.mint(backer, lockedTokens[backer]);
+        totalLockedTokens -= lockedTokens[backer];
+        lockedTokens[backer] = 0;
     }
 
     function deposit() public payable onlyOwner {
@@ -113,7 +112,7 @@ contract Crowdsale is SafeMath, Owned {
     
 
     function setIcoSucceeded() public onlyOwner {
-        require(isFinishedICO());
+        require(isFinishedICO() && totalLockedTokens == 0);
 
         uint tokensForDistribution = token.totalSupply() * 100 / 32;
 
@@ -144,13 +143,14 @@ contract Crowdsale is SafeMath, Owned {
         return bonus;
     }
 
-    function mintTokens(uint amount, address backer) private {
+    function getTokens(uint amount, address backer) internal returns (uint256) {
         uint tokens = token.tokenMultiplier() * amount / token.pricePerTokenInWei();
         uint bonusTokens = getBonus(amount, tokens);       
-        tokens += bonusTokens;
-        token.mint(backer, tokens);
         totalMintedBonusTokens += bonusTokens;
+        tokens += bonusTokens;
+        return tokens;
     }
+
 
     function processPayment(uint amount, address backer) private returns (uint) {
         uint remain = hardcap() - token.totalCollected();
@@ -167,13 +167,17 @@ contract Crowdsale is SafeMath, Owned {
 
     function() external isOpen isUnpaused payable {
         require(!isFinishedICO());
-        require(isAllowableAmount(msg.value) && isAcceptedKYC(msg.sender));
+        require(isAllowableAmount(msg.value));
         
         uint amount = msg.value;
         address backer = msg.sender;
 
         amount = processPayment(amount, backer);
-        mintTokens(amount, backer);  
+
+        uint tokensAmount = getTokens(amount, backer);
+
+        lockedTokens[backer] = tokensAmount;
+        totalLockedTokens += tokensAmount;
     }
 
     function getCurrentTime() internal constant returns (uint) {
