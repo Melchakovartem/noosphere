@@ -10,6 +10,7 @@ contract ERC223ReceivingContract {
 }
 
 contract Token is ERC20, ERC223, Owned, SafeMath {
+  
   string public constant symbol = "NZT";
 
   string public constant name = "NZT";
@@ -21,8 +22,6 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
   uint public tokenMultiplier = 10 ** 18;
 
   address public crowdsale;
-
-  bool public mintingFinished = false;
 
   bool public unlocked = false;
 
@@ -37,11 +36,6 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
   mapping(address => uint256) balances;
  
   mapping(address => mapping (address => uint256)) allowed;
-
-  modifier canMint() {
-    require(!mintingFinished);
-    _;
-  }
 
   modifier onlyOwnerOrCrowdsale {
     require(msg.sender == owner || msg.sender == crowdsale);
@@ -70,10 +64,6 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
  
   function balanceOf(address _owner) public constant returns (uint256 balance) {
     return balances[_owner];
-  }
-
-  function mintingFinish() public onlyOwner {
-    mintingFinished = true;
   }
   
   function isUnlocked() public constant returns (bool) {
@@ -153,7 +143,7 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
     return allowed[_owner][_spender];
   }
 
-  function mint(address target, uint256 mintedAmount) public canMint onlyOwnerOrCrowdsale {
+  function mint(address target, uint256 mintedAmount) public onlyOwnerOrCrowdsale {
     require(mintedAmount > 0);
 
     balances[target] = safeAdd(balances[target], mintedAmount);

@@ -100,21 +100,4 @@ contract('Token', function(accounts) {
     	assert.equal(await nzt.balanceOf(role.investor2), 0);
     	assert.equal(await nzt.totalSupply(), 0.1e20);
     })
-
-    it('can not mints tokens after finilize', async function() {
-    	await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
-    	assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
-    	assert.equal(await nzt.totalSupply(), 0.1e20);
-
-    	await nzt.mintingFinish({from: role.owner});
-    	try {
-            await nzt.mint(role.investor2, 0.1e20, {from: role.owner});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
-        
-        assert.equal(await nzt.balanceOf(role.investor2), 0);
-    	assert.equal(await nzt.totalSupply(), 0.1e20);
-
-    })
 })
