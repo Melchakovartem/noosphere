@@ -21,6 +21,6 @@ contract RoundA is Crowdsale
     	roundB = new RoundB(token, multisigFoundation, multisigAdvisers, 
                             multisigNodes, multisigTeam, startRoundB, endRoundB);
     	roundB.changeOwner(owner);
-    	token.changeOwner(roundB);
+    	token.changeCrowdsale(roundB);
     }
 }

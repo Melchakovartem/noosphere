@@ -9,14 +9,12 @@ contract ERC223ReceivingContract {
     function tokenFallback(address _from, uint _value, bytes _data) public;
 }
 
-contract Token is ERC20, ERC223, Owned, SafeMath 
-{
+contract Token is ERC20, ERC223, Owned, SafeMath {
   string public constant symbol = "NZT";
-  string public constant name = "NZT";
-  uint8 public constant decimals = 18;
 
-  bool public mintingFinished = false;
-  bool public unlocked = false;
+  string public constant name = "NZT";
+
+  uint8 public constant decimals = 18;
 
   uint public pricePerTokenInWei = 3785000000000000;
 
@@ -24,9 +22,17 @@ contract Token is ERC20, ERC223, Owned, SafeMath
 
   address public crowdsale;
 
-  uint256 _totalSupply = 0;
+  bool public mintingFinished = false;
 
-  uint256 _totalCollected = 0;
+  bool public unlocked = false;
+
+  uint _totalSupply = 0;
+
+  uint _totalCollected = 0;
+
+  uint _totalBonus = 0;
+
+  uint _totalFrozen = 0;
  
   mapping(address => uint256) balances;
  
@@ -37,13 +43,13 @@ contract Token is ERC20, ERC223, Owned, SafeMath
     _;
   }
 
-  function changeCrowdsale(address newCrowdsale) public onlyOwner {
-    crowdsale = newCrowdsale;
-  }
-
   modifier onlyOwnerOrCrowdsale {
     require(msg.sender == owner || msg.sender == crowdsale);
     _;
+  }
+
+  function changeCrowdsale(address newCrowdsale) public onlyOwner {
+    crowdsale = newCrowdsale;
   }
  
   function totalSupply() public constant returns (uint256 totalTokenCount) {
@@ -52,6 +58,14 @@ contract Token is ERC20, ERC223, Owned, SafeMath
 
   function totalCollected() public constant returns (uint256 totalTokenCount) {
     return _totalCollected;
+  }
+
+  function totalBonusTokens() public constant returns (uint256 totalTokenCount) {
+    return _totalBonus;
+  }
+
+  function totalFrozenTokens() public constant returns (uint256 totalTokenCount) {
+    return _totalFrozen;
   }
  
   function balanceOf(address _owner) public constant returns (uint256 balance) {
@@ -70,8 +84,20 @@ contract Token is ERC20, ERC223, Owned, SafeMath
     unlocked = true;
   }
 
-  function addCollected(uint amount) public onlyOwner {
+  function addCollected(uint amount) public onlyOwnerOrCrowdsale {
     _totalCollected += amount;
+  }
+
+  function addTotalBonus(uint amount) public onlyOwnerOrCrowdsale {
+    _totalBonus += amount;
+  }
+
+  function addTotalFrozen(uint amount) public onlyOwnerOrCrowdsale {
+    _totalFrozen += amount;
+  }
+
+  function subTotalFrozen(uint amount) public onlyOwnerOrCrowdsale {
+    _totalFrozen -= amount;
   }
 
   function isContract(address _addr) private returns (bool is_contract) {
@@ -127,7 +153,7 @@ contract Token is ERC20, ERC223, Owned, SafeMath
     return allowed[_owner][_spender];
   }
 
-  function mint(address target, uint256 mintedAmount) public canMint onlyOwner {
+  function mint(address target, uint256 mintedAmount) public canMint onlyOwnerOrCrowdsale {
     require(mintedAmount > 0);
 
     balances[target] = safeAdd(balances[target], mintedAmount);

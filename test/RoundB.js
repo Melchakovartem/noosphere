@@ -67,8 +67,6 @@ contract('RoundB', function(accounts) {
 
         await roundA.setTime(endTimeRoundA + 10, {from: role.owner});
 
-        await roundA.acceptKYC(role.investor, {from: role.owner});
-
         await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
 
         roundB = await RoundB.at(await roundA.roundB());
@@ -77,14 +75,18 @@ contract('RoundB', function(accounts) {
     })
 
     it('checks token owner', async function () {
-        assert.equal(await token.owner(), addressRoundB);
+        assert.equal(await token.owner(), addressRoundA);
+    })
+
+    it('checks token crowdsale address', async function () {
+        assert.equal(await token.crowdsale(), addressRoundB);
     })
 
     it('checks token address in round B', async function () {
         assert.equal(await roundB.token(), tokenAddress);
     })
 
-    it('does not buy tokens when hard cap is reached', async function() {
+    it('does not fund when hard cap is reached', async function() {
         ethInvest1 = ETH(0.003);
         ethInvest2 = ETH(0.001);
 
@@ -97,11 +99,11 @@ contract('RoundB', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
 
-        assert.equal(await roundB.isLockableAmount(role.investor2), 0);
+        assert.equal(await roundB.isFreezingAmount(role.investor2), 0);
         assert.equal(await token.totalCollected(), hardCap);
     })
 
-    it('does not buy tokens when fund < min value', async function() {
+    it('does not fund when fund < min value', async function() {
         ethInvest1 = ETH(0.0001);
 
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
@@ -112,7 +114,7 @@ contract('RoundB', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
 
-       assert.equal(await roundB.isLockableAmount(role.investor1), 0);
+       assert.equal(await roundB.isFreezingAmount(role.investor1), 0);
     })
 
     it('does not recieve bonus tokens', async function() {
@@ -123,7 +125,7 @@ contract('RoundB', function(accounts) {
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
         await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
 
-        assert.equal(await roundB.isLockableAmount(role.investor1), totalTokens);
+        assert.equal(await roundB.isFreezingAmount(role.investor1), totalTokens);
     })
 
     it('distributes tokens when hard cap is reached', async function(){
@@ -134,9 +136,11 @@ contract('RoundB', function(accounts) {
 
         await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
 
-        await roundB.acceptKYC(role.investor1, {from: role.owner});
+        lockedTokens = Number(await token.totalFrozenTokens());
 
-        totalTokens = Number(await token.totalSupply()); 
+        totalSupply = Number(await token.totalSupply());
+
+        totalTokens = lockedTokens + totalSupply; 
 
         distribution = getTokensDistribution(totalTokens);
 
@@ -156,11 +160,13 @@ contract('RoundB', function(accounts) {
 
         await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
 
-        await roundB.acceptKYC(role.investor1, {from: role.owner});
-
         await roundB.setTime(endTimeRoundB + 10, {from: role.owner});
 
-        totalTokens = Number(await token.totalSupply()); 
+        lockedTokens = Number(await token.totalFrozenTokens());
+
+        totalSupply = Number(await token.totalSupply());
+
+        totalTokens = lockedTokens + totalSupply; 
 
         distribution = getTokensDistribution(totalTokens);
 

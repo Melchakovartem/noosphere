@@ -65,7 +65,7 @@ contract('RoundA', function(accounts) {
         assert.equal(await roundA.owner(), role.owner);
     })
 
-    it('does not buy tokens when hard cap is reached', async function() {
+    it('does not fund when hard cap is reached', async function() {
         ethInvest1 = ETH(255);
         ethInvest2 = ETH(0.3);
 
@@ -78,7 +78,7 @@ contract('RoundA', function(accounts) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
 
-        assert.equal(await roundA.isLockableAmount(role.investor2), 0);
+        assert.equal(await roundA.isFreezingAmount(role.investor2), 0);
         assert.equal(await token.totalCollected(), ethInvest1);
     })
 
@@ -92,8 +92,8 @@ contract('RoundA', function(accounts) {
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
 
-        assert.equal(await roundA.isLockableAmount(role.investor1), totalTokens);
-        assert.equal(await roundA.totalLockedTokens(), totalTokens);
+        assert.equal(await roundA.isFreezingAmount(role.investor1), totalTokens);
+        assert.equal(await token.totalFrozenTokens(), totalTokens);
         assert.equal(await token.totalCollected(), ethInvest);
     })
 
@@ -107,8 +107,8 @@ contract('RoundA', function(accounts) {
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
 
-        assert.equal(await roundA.isLockableAmount(role.investor1), totalTokens);
-        assert.equal(await roundA.totalLockedTokens(), totalTokens);
+        assert.equal(await roundA.isFreezingAmount(role.investor1), totalTokens);
+        assert.equal(await token.totalFrozenTokens(), totalTokens);
         assert.equal(await token.totalCollected(), ethInvest);
     })
 
@@ -125,15 +125,15 @@ contract('RoundA', function(accounts) {
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest1});
 
-        totalBonus = await roundA.totalBonusTokens();
+        totalBonus = await roundA.maxBonusTokens();
 
-        assert.equal(await roundA.totalMintedBonusTokens(), totalBonusTokens);
+        assert.equal(await token.totalBonusTokens(), totalBonusTokens);
 
         await roundA.sendTransaction({from: role.investor2, to: addressRoundA, value: ethInvest2});
         
-        assert.equal(await roundA.isLockableAmount(role.investor2), purchasedTokens2);
+        assert.equal(await roundA.isFreezingAmount(role.investor2), purchasedTokens2);
         
-        assert.equal(await roundA.totalMintedBonusTokens(), totalBonusTokens);
+        assert.equal(await token.totalBonusTokens(), totalBonusTokens);
     })
 
 
@@ -152,7 +152,7 @@ contract('RoundA', function(accounts) {
         await roundA.sendTransaction({from: role.investor2, to: addressRoundA, value: ethInvest2});
 
 
-        assert.equal(await roundA.isLockableAmount(role.investor2), totalTokens2);
+        assert.equal(await roundA.isFreezingAmount(role.investor2), totalTokens2);
     
         assert.equal(await token.totalCollected(), ETH(255));
 
@@ -170,14 +170,14 @@ contract('RoundA', function(accounts) {
         assert.equal(await roundB.owner(), role.owner);
     })
 
-    it('sets owner of token is roundB when starts roundB', async function () {
+    it('sets address RoundB as crowdsale of token is roundB when starts roundB', async function () {
         await roundA.setTime(endTimeRoundA + 10, {from: role.owner});
         await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
 
         roundB = await RoundB.at(await roundA.roundB());
         addressRoundB = await roundB.address;
 
-        assert.equal(await token.owner(), addressRoundB);
+        assert.equal(await token.crowdsale(), addressRoundB);
     })
 
     it('does not start roundB when roundA not ended', async function () {
@@ -216,7 +216,7 @@ contract('RoundA', function(accounts) {
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
 
-        lockedTokens = Number(await roundA.totalLockedTokens());
+        lockedTokens = Number(await token.totalFrozenTokens());
 
         totalSupply = Number(await token.totalSupply());
 

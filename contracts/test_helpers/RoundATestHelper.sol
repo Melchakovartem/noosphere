@@ -25,7 +25,7 @@ contract RoundATestHelper is RoundA
         roundB = new RoundBTestHelper(token, multisigFoundation, multisigAdvisers, 
                             multisigNodes, multisigTeam, startRoundB, endRoundB);
         roundB.changeOwner(owner);
-        token.changeOwner(roundB);
+        token.changeCrowdsale(roundB);
     }
 
     function getCurrentTime() internal constant returns (uint) {
@@ -44,13 +44,13 @@ contract RoundATestHelper is RoundA
         return 0.2 ether; 
     }
 
-    function totalBonusTokens() public constant returns (uint256) {
+    function maxBonusTokens() public constant returns (uint256) {
         return 6225450000000000000000;
     }
 
     function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
         uint bonus = 0;
-        uint remainBonusTokens = totalBonusTokens() - totalMintedBonusTokens;
+        uint remainBonusTokens = maxBonusTokens() - token.totalBonusTokens();
 
         if (money >= 2.5 ether) {
             bonus = tokens * 15 / 100;

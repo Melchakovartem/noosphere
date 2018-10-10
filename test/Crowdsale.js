@@ -176,8 +176,8 @@ contract('Crowdsale', function(accounts) {
         assert.equal(await token.balanceOf(role.investor1), 0);
         assert.equal(await token.totalSupply(), 0);
         assert.equal(await token.totalCollected(), ethInvest1);
-        assert.equal(await crowdsale.totalLockedTokens(), purchasedTokens);
-        assert.equal(await crowdsale.isLockableAmount(role.investor1), purchasedTokens);
+        assert.equal(await token.totalFrozenTokens(), purchasedTokens);
+        assert.equal(await crowdsale.isFreezingAmount(role.investor1), purchasedTokens);
     })
 
     it('recieves tokens when backer is accepted KYC', async function() {
@@ -191,16 +191,16 @@ contract('Crowdsale', function(accounts) {
         assert.equal(await token.balanceOf(role.investor1), 0);
         assert.equal(await token.totalSupply(), 0);
         assert.equal(await token.totalCollected(), ethInvest1);
-        assert.equal(await crowdsale.totalLockedTokens(), purchasedTokens);
-        assert.equal(await crowdsale.isLockableAmount(role.investor1), purchasedTokens);
+        assert.equal(await token.totalFrozenTokens(), purchasedTokens);
+        assert.equal(await crowdsale.isFreezingAmount(role.investor1), purchasedTokens);
 
         await crowdsale.acceptKYC(role.investor1, {from: role.owner});
 
         assert.equal(await token.balanceOf(role.investor1), purchasedTokens);
         assert.equal(await token.totalSupply(), purchasedTokens);
         assert.equal(await token.totalCollected(), ethInvest1);
-        assert.equal(await crowdsale.totalLockedTokens(), 0);
-        assert.equal(await crowdsale.isLockableAmount(role.investor1), 0);
+        assert.equal(await token.totalFrozenTokens(), 0);
+        assert.equal(await crowdsale.isFreezingAmount(role.investor1), 0);
         
     })
 
