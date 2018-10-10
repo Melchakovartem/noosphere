@@ -29,6 +29,8 @@ contract Crowdsale is Owned {
 
     mapping(address => uint256) frozenTokens;
 
+    address public managerKYC;
+
     modifier isOpen {
         require(isOpened());
         _;
@@ -36,6 +38,11 @@ contract Crowdsale is Owned {
 
     modifier isUnpaused {
         require(!paused);
+        _;
+    }
+
+    modifier onlyOwnerOrManagerKYC {
+        require(msg.sender == owner || msg.sender == managerKYC);
         _;
     }
     
@@ -49,6 +56,10 @@ contract Crowdsale is Owned {
         multisigTeam = team;
         startTime = start;
         endTime = end;
+    }
+
+    function changeManagerKYC(address newManagerKYC) public onlyOwner {
+        managerKYC = newManagerKYC;
     }
 
     function changeAdvisers(address newAdvisers) public onlyOwner {
@@ -95,7 +106,7 @@ contract Crowdsale is Owned {
         return frozenTokens[backer];
     }
 
-    function acceptKYC(address backer) public onlyOwner {
+    function acceptKYC(address backer) public onlyOwnerOrManagerKYC {
         require(frozenTokens[backer] > 0);
         token.mint(backer, frozenTokens[backer]);
         token.subTotalFrozen(frozenTokens[backer]);

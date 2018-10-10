@@ -18,7 +18,8 @@ contract('Crowdsale', function(accounts) {
            team: accounts[7],
            newOwner: accounts[8],
            newAdvisers: accounts[9],
-           newTeam: accounts[10]
+           newTeam: accounts[10],
+           managerKYC: accounts[11]
         };
     }
 
@@ -222,6 +223,22 @@ contract('Crowdsale', function(accounts) {
         } catch (error) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
+    })
+
+    it('accepts KYC from managerKYC', async function() {
+        ethInvest1 = ETH(3.785);
+        purchasedTokens = getPurchasedTokens(ethInvest1);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
+
+        await crowdsale.changeManagerKYC(role.managerKYC, {from: role.owner})
+
+        await crowdsale.acceptKYC(role.investor1, {from: role.managerKYC});
+        
+        assert.equal(await crowdsale.isFreezingAmount(role.investor1), 0);
+        assert.equal(await token.balanceOf(role.investor1), purchasedTokens);
     })
 })
 
