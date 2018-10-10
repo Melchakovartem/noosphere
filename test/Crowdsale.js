@@ -89,7 +89,7 @@ contract('Crowdsale', function(accounts) {
     });
 
     it('funds', async function() {
-        ethInvest = ETH(0.3785);
+        ethInvest = ETH(3.785);
         purchasedTokens = getPurchasedTokens(ethInvest);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
@@ -100,7 +100,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('does not fund when ico on pause', async function() {
-    	ethInvest = ETH(0.3785);
+    	ethInvest = ETH(3.785);
 
     	await crowdsale.setTime(startTime + 10, {from: role.owner});
 
@@ -116,7 +116,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('funds when ico on unpause', async function() {
-        ethInvest = ETH(0.3785);
+        ethInvest = ETH(3.785);
         purchasedTokens = getPurchasedTokens(ethInvest);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
@@ -137,7 +137,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('does not fund when money < min value', async function() {
-        ethInvest = ETH(0.1);
+        ethInvest = ETH(1);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
 
@@ -151,7 +151,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('does not fund when ico not started', async function() {
-    	ethInvest = ETH(0.3785);
+    	ethInvest = ETH(3.785);
 
     	await crowdsale.setTime(startTime - 10, {from: role.owner});
 
@@ -165,7 +165,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('does not fund when ico ended', async function() {
-    	ethInvest = ETH(0.3785);
+    	ethInvest = ETH(3.785);
 
     	await crowdsale.setTime(endTime + 10, {from: role.owner});
 
@@ -179,7 +179,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('locks tokens when fund and kyc not accepted', async function() {
-        ethInvest1 = ETH(0.3785);
+        ethInvest1 = ETH(3.785);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
 
@@ -193,7 +193,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('recieves tokens when backer is accepted KYC', async function() {
-        ethInvest1 = ETH(0.3785);
+        ethInvest1 = ETH(3.785);
         purchasedTokens = getPurchasedTokens(ethInvest1);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});

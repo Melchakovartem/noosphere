@@ -8,7 +8,6 @@ contract('RoundB', function(accounts) {
     const endTimeRoundA = startTimeRoundA + 100;
     const startTimeRoundB = 100000;
     const endTimeRoundB = startTimeRoundB + 100;
-    const hardCap = 255 * (10 ** 18);
 
     function getRoles() {
         return {
@@ -24,7 +23,7 @@ contract('RoundB', function(accounts) {
     }
 
     function ETH(amount) {
-        return web3.toWei(amount, 'ether');
+        return Number(web3.toWei(amount, 'ether'));
     }
 
     function getPurchasedTokens(eth) {
@@ -58,7 +57,7 @@ contract('RoundB', function(accounts) {
     
 	beforeEach('setup contract for each test', async function () {
         [roundA, addressRoundA, token, role] = await instantiate();
-        ethInvest = ETH(254.997);
+        ethInvest = ETH(25499.7);
         tokenAddress = await token.address;
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
@@ -87,8 +86,8 @@ contract('RoundB', function(accounts) {
     })
 
     it('does not fund when hard cap is reached', async function() {
-        ethInvest1 = ETH(0.003);
-        ethInvest2 = ETH(0.001);
+        ethInvest1 = ETH(0.3);
+        ethInvest2 = ETH(0.1);
 
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
         await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
@@ -100,11 +99,11 @@ contract('RoundB', function(accounts) {
         }
 
         assert.equal(await roundB.isFreezingAmount(role.investor2), 0);
-        assert.equal(await token.totalCollected(), hardCap);
+        assert.equal(await token.totalCollected(), ETH(25500));
     })
 
     it('does not fund when fund < min value', async function() {
-        ethInvest1 = ETH(0.0001);
+        ethInvest1 = ETH(0.01);
 
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
 
@@ -117,19 +116,8 @@ contract('RoundB', function(accounts) {
        assert.equal(await roundB.isFreezingAmount(role.investor1), 0);
     })
 
-    it('does not recieve bonus tokens', async function() {
-        ethInvest1 = ETH(0.0018925);
-        purchasedTokens = getPurchasedTokens(ethInvest1);
-        totalTokens = purchasedTokens;
-
-        await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
-        await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
-
-        assert.equal(await roundB.isFreezingAmount(role.investor1), totalTokens);
-    })
-
     it('distributes tokens when hard cap is reached', async function(){
-        ethInvest1 = ETH(0.003);
+        ethInvest1 = ETH(0.3);
         purchasedTokens = getPurchasedTokens(ethInvest1);
         
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
@@ -153,7 +141,7 @@ contract('RoundB', function(accounts) {
     })
 
     it('distributes tokens when time is ended', async function(){
-        ethInvest1 = ETH(0.001);
+        ethInvest1 = ETH(0.1);
         purchasedTokens = getPurchasedTokens(ethInvest1);
         
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
@@ -179,7 +167,7 @@ contract('RoundB', function(accounts) {
     })
 
     it('does not distribute tokens when time is not ended and hard cap is not reached', async function(){
-        ethInvest1 = ETH(0.001);
+        ethInvest1 = ETH(0.1);
         purchasedTokens = getPurchasedTokens(ethInvest1);
         
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});

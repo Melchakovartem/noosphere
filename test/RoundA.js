@@ -8,8 +8,7 @@ contract('RoundA', function(accounts) {
     const endTimeRoundA = startTimeRoundA + 100;
     const startTimeRoundB = 100000;
     const endTimeRoundB = startTimeRoundB + 100;
-    const totalBonusTokens = 6225450000000000000000;
-    const hardCap = 255 * (10 ** 18);
+    const totalBonusTokens = 622545000000000000000000;
     const nilAddress = 0x0000000000000000000000000000000000000000;
 
     function getRoles() {
@@ -25,7 +24,7 @@ contract('RoundA', function(accounts) {
     }
 
     function ETH(amount) {
-        return web3.toWei(amount, 'ether');
+        return Number(web3.toWei(amount, 'ether'));
     }
 
     function getPurchasedTokens(eth) {
@@ -66,8 +65,8 @@ contract('RoundA', function(accounts) {
     })
 
     it('does not fund when hard cap is reached', async function() {
-        ethInvest1 = ETH(255);
-        ethInvest2 = ETH(0.3);
+        ethInvest1 = ETH(25500);
+        ethInvest2 = ETH(3);
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest1});
@@ -77,16 +76,16 @@ contract('RoundA', function(accounts) {
         } catch (error) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
-
+        
         assert.equal(await roundA.isFreezingAmount(role.investor2), 0);
         assert.equal(await token.totalCollected(), ethInvest1);
     })
 
     it('recievs bonus 15% tokens when invest >= 250 ETH', async function() {
-        ethInvest = ETH(3.785);
+        ethInvest = ETH(378.5);
         purchasedTokens = getPurchasedTokens(ethInvest);
         bonusTokens = purchasedTokens * 0.15;
-        totalTokens = bonusTokens + purchasedTokens;
+        totalTokens = rounding(bonusTokens + purchasedTokens);
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
@@ -98,7 +97,7 @@ contract('RoundA', function(accounts) {
     })
 
     it('recievs bonus 20% tokens when 250 > invest > 50 ETH and ', async function() {
-        ethInvest = ETH(0.757);
+        ethInvest = ETH(75.7);
         purchasedTokens = getPurchasedTokens(ethInvest);
         bonusTokens = purchasedTokens * 0.20;
         totalTokens = bonusTokens + purchasedTokens;
@@ -113,8 +112,8 @@ contract('RoundA', function(accounts) {
     })
 
     it('does not recieve bonus tokens because bonus tokens is ended ', async function() {
-        ethInvest1 = ETH(189.25);
-        ethInvest2 = ETH(3.785);
+        ethInvest1 = ETH(18925);
+        ethInvest2 = ETH(378.5);
 
         purchasedTokens1 = getPurchasedTokens(ethInvest1);
         purchasedTokens2 = getPurchasedTokens(ethInvest2);
@@ -138,26 +137,22 @@ contract('RoundA', function(accounts) {
 
 
     it('returns remaining money when hard cap is reached', async function(){
-        ethInvest1 = ETH(251.215);
-        ethInvest2 = ETH(4.785);
+        ethInvest1 = ETH(25121.5);
+        ethInvest2 = ETH(478.5);
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
         balanceOwner = Number(web3.eth.getBalance(role.owner));
 
-        purchasedTokens2 = getPurchasedTokens(ETH(3.785));
+        purchasedTokens2 = getPurchasedTokens(ETH(378.5));
         totalTokens2 = purchasedTokens2;
 
         
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest1});
         await roundA.sendTransaction({from: role.investor2, to: addressRoundA, value: ethInvest2});
 
-
         assert.equal(await roundA.isFreezingAmount(role.investor2), totalTokens2);
     
-        assert.equal(await token.totalCollected(), ETH(255));
-
-        totalBalanceOwner = rounding(balanceOwner + hardCap);
-        assert.equal(web3.eth.getBalance(role.owner), totalBalanceOwner);
+        assert.equal(await token.totalCollected(), ETH(25500));
     })
 
     it('changes owner of roundB when starts roundB', async function () {
@@ -194,7 +189,7 @@ contract('RoundA', function(accounts) {
     })
 
     it('does not start roundB when hard cap is reached', async function () {
-        ethInvest = ETH(255);
+        ethInvest = ETH(25500);
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
@@ -209,7 +204,7 @@ contract('RoundA', function(accounts) {
     })
 
     it('distributes tokens when hard cap is reached', async function(){
-        ethInvest = ETH(255);
+        ethInvest = ETH(25500);
         purchasedTokens = getPurchasedTokens(ethInvest);
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});

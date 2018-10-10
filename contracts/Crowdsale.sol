@@ -133,7 +133,7 @@ contract Crowdsale is Owned {
         if (money >= 250 ether) {
             bonus = tokens * 15 / 100;
         }
-        if (money >= 50 ether && money < 250) {
+        if (money >= 50 ether && money < 250 ether) {
             bonus = tokens * 20 / 100;
         }
 
