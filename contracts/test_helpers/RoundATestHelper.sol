@@ -9,7 +9,6 @@ import './RoundBTestHelper.sol';
 ///DONT use it in production!
 contract RoundATestHelper is RoundA, TimeTestHelper
 {
-
     RoundBTestHelper public roundB;
 
     function RoundATestHelper(address foundation, 
