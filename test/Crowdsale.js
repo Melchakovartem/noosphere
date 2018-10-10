@@ -137,7 +137,7 @@ contract('Crowdsale', function(accounts) {
     })
 
     it('does not fund when money < min value', async function() {
-        ethInvest = ETH(1);
+        ethInvest = ETH(0.01);
 
         await crowdsale.setTime(startTime + 10, {from: role.owner});
 

@@ -65,7 +65,7 @@ contract Crowdsale is Owned {
     }
 
     function minValue() public pure returns (uint256) {
-        return 2 ether;
+        return 0.1 ether;
     }
 
     function pause() public onlyOwner {

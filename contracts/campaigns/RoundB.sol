@@ -23,7 +23,7 @@ contract RoundB is Crowdsale
     }
 
     function maxValue() public pure returns (uint256) {
-        return 0.4 ether;
+        return 50 ether;
     }
 
     function isAllowableAmount(uint amount) public constant returns (bool) {
