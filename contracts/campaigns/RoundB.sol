@@ -18,16 +18,8 @@ contract RoundB is Crowdsale
         return isReachedHardCap() || getCurrentTime() > endTime;
     }
 
-    function minValue() public pure returns (uint256) {
-        return 0.1 ether;
-    }
-
-    function maxValue() public pure returns (uint256) {
-        return 50 ether;
-    }
-
     function isAllowableAmount(uint amount) public constant returns (bool) {
-        return amount >= minValue() && amount <= maxValue();
+        return amount >= minValue && amount <= maxValue;
     }
 
     function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {

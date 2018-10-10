@@ -23,4 +23,22 @@ contract RoundA is Crowdsale
     	roundB.changeOwner(owner);
     	token.changeCrowdsale(roundB);
     }
+
+    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
+        uint bonus = 0;
+        uint remainBonusTokens = maxBonusTokens() - token.totalBonusTokens();
+
+        if (money >= 250 ether) {
+            bonus = tokens * 15 / 100;
+        }
+        if (money >= 50 ether && money < 250 ether) {
+            bonus = tokens * 20 / 100;
+        }
+
+        if (remainBonusTokens < bonus) {
+            bonus = remainBonusTokens;
+        } 
+
+        return bonus;
+    }
 }

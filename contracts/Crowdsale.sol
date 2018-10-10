@@ -24,6 +24,9 @@ contract Crowdsale is Owned {
 
     Token public token;
 
+    uint public minValue = 0.1 ether;
+    uint public maxValue = 25500 ether;
+
     mapping(address => uint256) frozenTokens;
 
     modifier isOpen {
@@ -56,16 +59,20 @@ contract Crowdsale is Owned {
         multisigTeam = newTeam;
     }
 
-    function hardcap() public pure returns (uint256) {
+    //function changeMinValue(uint amount) public onlyOwner {
+    //    minValue = amount;
+    //}
+
+    //function changeMaxValue(uint amount) public onlyOwner {
+    //    maxValue = amount;
+    //}
+
+    function hardcap() public constant returns (uint256) {
         return 25500 ether; 
     }
 
     function maxBonusTokens() public constant returns (uint256) {
         return 622545000000000000000000;
-    }
-
-    function minValue() public pure returns (uint256) {
-        return 0.1 ether;
     }
 
     function pause() public onlyOwner {
@@ -89,7 +96,7 @@ contract Crowdsale is Owned {
     }
 
     function isAllowableAmount(uint amount) public constant returns (bool) {
-        return amount >= minValue();
+        return amount >= minValue;
     }
 
     function isFreezingAmount(address backer) public constant returns (uint) {
@@ -128,18 +135,6 @@ contract Crowdsale is Owned {
 
     function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
         uint bonus = 0;
-        uint remainBonusTokens = maxBonusTokens() - token.totalBonusTokens();
-
-        if (money >= 250 ether) {
-            bonus = tokens * 15 / 100;
-        }
-        if (money >= 50 ether && money < 250 ether) {
-            bonus = tokens * 20 / 100;
-        }
-
-        if (remainBonusTokens < bonus) {
-            bonus = remainBonusTokens;
-        } 
 
         return bonus;
     }
