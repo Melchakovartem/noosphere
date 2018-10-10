@@ -2,9 +2,8 @@ pragma solidity ^0.4.15;
 
 import "./Owned.sol";
 import "./Token.sol";
-import "./SafeMath.sol";
 
-contract Crowdsale is SafeMath, Owned {
+contract Crowdsale is Owned {
 
     struct Pool {
         address multisig;
@@ -47,6 +46,14 @@ contract Crowdsale is SafeMath, Owned {
         multisigTeam = team;
         startTime = start;
         endTime = end;
+    }
+
+    function changeAdvisers(address newAdvisers) public onlyOwner {
+        multisigAdvisers = newAdvisers;
+    }
+
+    function changeTeam(address newTeam) public onlyOwner {
+        multisigTeam = newTeam;
     }
 
     function hardcap() public pure returns (uint256) {
@@ -100,10 +107,10 @@ contract Crowdsale is SafeMath, Owned {
     }
 
     function tokenDistribution() private {
-        pools.push(Pool({multisig: multisigFoundation, percent: 29}));
-        pools.push(Pool({multisig: multisigAdvisers, percent: 6}));
-        pools.push(Pool({multisig: multisigNodes, percent: 26}));
-        pools.push(Pool({multisig: multisigTeam, percent: 7}));
+        addPool(multisigFoundation, 29);
+        addPool(multisigAdvisers, 6);
+        addPool(multisigNodes, 26);
+        addPool(multisigTeam, 7);
     }
     
 
@@ -163,6 +170,7 @@ contract Crowdsale is SafeMath, Owned {
 
     function() external isOpen isUnpaused payable {
         require(!isFinishedICO());
+
         require(isAllowableAmount(msg.value));
         
         uint amount = msg.value;
@@ -175,6 +183,13 @@ contract Crowdsale is SafeMath, Owned {
         frozenTokens[backer] = tokensAmount;
 
         token.addTotalFrozen(tokensAmount);
+    }
+
+    function addPool(address to, uint percent) public onlyOwner
+    {
+        require(percent > 0);
+
+        pools.push(Pool({multisig:to, percent: percent}));
     }
 
     function getCurrentTime() internal constant returns (uint) {

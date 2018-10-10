@@ -16,7 +16,9 @@ contract('Crowdsale', function(accounts) {
            advisers: accounts[5],
            nodes: accounts[6],
            team: accounts[7],
-           newOwner: accounts[8]
+           newOwner: accounts[8],
+           newAdvisers: accounts[9],
+           newTeam: accounts[10]
         };
     }
 
@@ -69,6 +71,16 @@ contract('Crowdsale', function(accounts) {
     it('changes an owner', async function () {
         await crowdsale.changeOwner(role.newOwner, {from: role.owner});
         assert.equal(await crowdsale.owner(), role.newOwner);
+    })
+
+    it('changes advisers wallet', async function () {
+        await crowdsale.changeAdvisers(role.newAdvisers, {from: role.owner});
+        assert.equal(await crowdsale.multisigAdvisers(), role.newAdvisers);
+    })
+
+    it('changes team wallet', async function () {
+        await crowdsale.changeTeam(role.newTeam, {from: role.owner});
+        assert.equal(await crowdsale.multisigTeam(), role.newTeam);
     })
 
     it("deposits", async function() {
