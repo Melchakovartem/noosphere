@@ -52,12 +52,19 @@ contract('RoundA', function(accounts) {
                                   role.nodes, role.team, startTimeRoundA, 
                                   endTimeRoundA, {from: role.owner, gas: 6700000});
         const addressRoundA = await roundA.address;
+
         const token = await Token.at(await roundA.token());
-        return [roundA, addressRoundA, token, role];
+
+        const roundB = await RoundB.new(token.address, role.foundation, role.advisers, 
+                                  role.nodes, role.team, startTimeRoundB, 
+                                  endTimeRoundB, {from: role.owner, gas: 6700000});
+        const addressRoundB = await roundB.address;
+
+        return [roundA, addressRoundA, roundB, addressRoundB,  token, role];
     };
     
 	beforeEach('setup contract for each test', async function () {
-        [roundA, addressRoundA, token, role] = await instantiate();
+        [roundA, addressRoundA, roundB, addressRoundB, token, role] = await instantiate();
     })
 
     it('has an owner', async function () {
@@ -155,22 +162,22 @@ contract('RoundA', function(accounts) {
         assert.equal(await token.totalCollected(), ETH(25500));
     })
 
-    it('changes owner of roundB when starts roundB', async function () {
-        await roundA.setTime(endTimeRoundA + 10, {from: role.owner});
-        await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
-
-        roundB = await RoundB.at(await roundA.roundB());
-        addressRoundB = await roundB.address;
-
-        assert.equal(await roundB.owner(), role.owner);
-    })
-
     it('sets address RoundB as crowdsale of token is roundB when starts roundB', async function () {
         await roundA.setTime(endTimeRoundA + 10, {from: role.owner});
-        await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
+        await roundA.startRoundB(addressRoundB, {from: role.owner});
 
-        roundB = await RoundB.at(await roundA.roundB());
-        addressRoundB = await roundB.address;
+        assert.equal(await token.crowdsale(), addressRoundB);
+    })
+
+    it('does not set address RoundB as crowdsale of token is roundB when address already setted', async function () {
+        await roundA.setTime(endTimeRoundA + 10, {from: role.owner});
+        await roundA.startRoundB(addressRoundB, {from: role.owner});
+
+        try {
+           await roundA.startRoundB(role.investor2, {from: role.owner});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
 
         assert.equal(await token.crowdsale(), addressRoundB);
     })
@@ -179,13 +186,13 @@ contract('RoundA', function(accounts) {
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
         try {
-           await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
+           await roundA.startRoundB(addressRoundB, {from: role.owner});
         } catch (error) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
 
         assert.equal(await token.owner(), addressRoundA);
-        assert.equal(await roundA.roundB(), nilAddress);
+        assert.equal(await token.crowdsale(), nilAddress);
     })
 
     it('does not start roundB when hard cap is reached', async function () {
@@ -195,12 +202,12 @@ contract('RoundA', function(accounts) {
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
 
         try {
-           await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
+           await roundA.startRoundB(addressRoundB, {from: role.owner});
         } catch (error) {
             assert.equal(error, 'Error: VM Exception while processing transaction: revert');
         }
         assert.equal(await roundA.isFinishedICO(), true);
-        assert.equal(await roundA.roundB(), nilAddress);
+        assert.equal(await token.crowdsale(), nilAddress);
     })
 
     it('distributes tokens when hard cap is reached', async function(){

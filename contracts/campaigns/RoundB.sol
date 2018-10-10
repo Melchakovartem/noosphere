@@ -21,10 +21,4 @@ contract RoundB is Crowdsale
     function isAllowableAmount(uint amount) public constant returns (bool) {
         return amount >= minValue && amount <= maxValue;
     }
-
-    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
-        uint bonus = 0;
-
-        return bonus;
-    }
 }

@@ -8,6 +8,7 @@ contract('RoundB', function(accounts) {
     const endTimeRoundA = startTimeRoundA + 100;
     const startTimeRoundB = 100000;
     const endTimeRoundB = startTimeRoundB + 100;
+    const totalBonusTokens = 622545000000000000000000;
 
     function getRoles() {
         return {
@@ -48,17 +49,24 @@ contract('RoundB', function(accounts) {
     async function instantiate() {
         const role = getRoles();
         const roundA = await RoundA.new(role.foundation, role.advisers, 
-                                  role.nodes, role.team, startTimeRoundA, 
-                                  endTimeRoundA, {from: role.owner, gas: 6700000});
+                                        role.nodes, role.team, startTimeRoundA, 
+                                        endTimeRoundA, {from: role.owner, gas: 6700000});
         const addressRoundA = await roundA.address;
+
         const token = await Token.at(await roundA.token());
-        return [roundA, addressRoundA, token, role];
+        const tokenAddress = await token.address;
+
+        const roundB = await RoundB.new(tokenAddress, role.foundation, role.advisers, 
+                                        role.nodes, role.team, startTimeRoundB, 
+                                        endTimeRoundB, {from: role.owner, gas: 6700000});
+        const addressRoundB = await roundB.address;
+
+        return [roundA, addressRoundA, roundB, addressRoundB,  token, tokenAddress, role];
     };
     
 	beforeEach('setup contract for each test', async function () {
-        [roundA, addressRoundA, token, role] = await instantiate();
+        [roundA, addressRoundA, roundB, addressRoundB, token, tokenAddress, role] = await instantiate();
         ethInvest = ETH(25499.7);
-        tokenAddress = await token.address;
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
@@ -66,11 +74,7 @@ contract('RoundB', function(accounts) {
 
         await roundA.setTime(endTimeRoundA + 10, {from: role.owner});
 
-        await roundA.startRoundB(startTimeRoundB, endTimeRoundB, {from: role.owner, gas: 3000000});
-
-        roundB = await RoundB.at(await roundA.roundB());
-
-        addressRoundB = await roundB.address;
+        await roundA.startRoundB(addressRoundB, {from: role.owner});
     })
 
     it('checks token owner', async function () {
@@ -181,7 +185,29 @@ contract('RoundB', function(accounts) {
         }
     })
 
+    it('recieves tokens from roundA and round B when KYC accepted', async function() {
+        ethInvest = ETH(25499.7);
+        ethInvest1 = ETH(0.1);
+        
+        purchasedTokens = getPurchasedTokens(ethInvest);
+        purchasedTokens1 = getPurchasedTokens(ethInvest1);
 
+        totalTokens = purchasedTokens + totalBonusTokens;
+        totalTokens1 = purchasedTokens1;
+        
+        await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
+
+        await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
+
+        assert.equal(await token.balanceOf(role.investor), 0);
+        assert.equal(await token.balanceOf(role.investor1), 0);
+
+        await roundA.acceptKYC(role.investor, {from: role.owner});
+        await roundB.acceptKYC(role.investor1, {from: role.owner});
+
+        assert.equal(await roundA.isFreezingAmount(role.investor), 0);
+        assert.equal(await roundB.isFreezingAmount(role.investor1), 0);
+    })
 })
 
 

@@ -1,10 +1,10 @@
 pragma solidity ^0.4.15;
 
 import '../Crowdsale.sol';
-import './RoundB.sol';
 
 contract RoundA is Crowdsale
-{   RoundB public roundB;
+{   
+    bool public newRoundStarted = false;
 
     function RoundA(address foundation, 
     	            address advisers, 
@@ -16,12 +16,13 @@ contract RoundA is Crowdsale
         	token = new Token();
         }
 
-    function startRoundB(uint startRoundB, uint endRoundB) public onlyOwner {
-    	require(getCurrentTime() > endTime);
-    	roundB = new RoundB(token, multisigFoundation, multisigAdvisers, 
-                            multisigNodes, multisigTeam, startRoundB, endRoundB);
-    	roundB.changeOwner(owner);
+    function startRoundB(address roundB) public onlyOwner {
+    	require(getCurrentTime() > endTime && !newRoundStarted && !isReachedHardCap());
+    	//roundB = new RoundB(token, multisigFoundation, multisigAdvisers, 
+        //                    multisigNodes, multisigTeam, startRoundB, endRoundB);
+    	//roundB.changeOwner(owner);
     	token.changeCrowdsale(roundB);
+        newRoundStarted = true;
     }
 
     function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
