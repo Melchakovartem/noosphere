@@ -17,10 +17,7 @@ contract RoundA is Crowdsale
         }
 
     function startRoundB(address roundB) public onlyOwner {
-    	require(getCurrentTime() > endTime && !newRoundStarted && !isReachedHardCap());
-    	//roundB = new RoundB(token, multisigFoundation, multisigAdvisers, 
-        //                    multisigNodes, multisigTeam, startRoundB, endRoundB);
-    	//roundB.changeOwner(owner);
+    	require(getCurrentTime() > endTime && !newRoundStarted);
     	token.changeCrowdsale(roundB);
         newRoundStarted = true;
     }

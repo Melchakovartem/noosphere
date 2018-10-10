@@ -66,7 +66,7 @@ contract('RoundB', function(accounts) {
     
 	beforeEach('setup contract for each test', async function () {
         [roundA, addressRoundA, roundB, addressRoundB, token, tokenAddress, role] = await instantiate();
-        ethInvest = ETH(25499.7);
+        ethInvest = ETH(25399.7);
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
@@ -90,7 +90,7 @@ contract('RoundB', function(accounts) {
     })
 
     it('does not fund when hard cap is reached', async function() {
-        ethInvest1 = ETH(0.3);
+        ethInvest1 = ETH(100.3);
         ethInvest2 = ETH(0.1);
 
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
@@ -121,7 +121,7 @@ contract('RoundB', function(accounts) {
     })
 
     it('distributes tokens when hard cap is reached', async function(){
-        ethInvest1 = ETH(0.3);
+        ethInvest1 = ETH(100.3);
         purchasedTokens = getPurchasedTokens(ethInvest1);
         
         await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
@@ -186,7 +186,6 @@ contract('RoundB', function(accounts) {
     })
 
     it('recieves tokens from roundA and round B when KYC accepted', async function() {
-        ethInvest = ETH(25499.7);
         ethInvest1 = ETH(0.1);
         
         purchasedTokens = getPurchasedTokens(ethInvest);
@@ -207,6 +206,52 @@ contract('RoundB', function(accounts) {
 
         assert.equal(await roundA.isFreezingAmount(role.investor), 0);
         assert.equal(await roundB.isFreezingAmount(role.investor1), 0);
+    })
+
+    it('changes min value of fund', async function() {
+        ethInvest1 = ETH(0.1);
+        ethInvest2 = ETH(0.5);
+        purchasedTokens1 = getPurchasedTokens(ethInvest1);
+
+        await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
+
+        await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
+
+        assert.equal(await roundB.isFreezingAmount(role.investor1), purchasedTokens1);
+
+        await roundB.changeMinValue(ETH(1), {from: role.owner});
+
+        try {
+            await roundB.sendTransaction({from: role.investor2, to: addressRoundB, value: ethInvest2});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+
+        assert.equal(await roundB.isFreezingAmount(role.investor2), 0);
+
+    })
+
+    it('changes max value of fund', async function() {
+        ethInvest1 = ETH(37.85);
+        ethInvest2 = ETH(15);
+        purchasedTokens1 = getPurchasedTokens(ethInvest1);
+
+        await roundB.setTime(startTimeRoundB + 10, {from: role.owner});
+
+        await roundB.sendTransaction({from: role.investor1, to: addressRoundB, value: ethInvest1});
+
+        assert.equal(await roundB.isFreezingAmount(role.investor1), purchasedTokens1);
+
+        await roundB.changeMaxValue(ETH(10), {from: role.owner});
+
+        try {
+            await roundB.sendTransaction({from: role.investor2, to: addressRoundB, value: ethInvest2});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+
+        assert.equal(await roundB.isFreezingAmount(role.investor2), 0);
+
     })
 })
 

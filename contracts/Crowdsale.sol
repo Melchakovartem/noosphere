@@ -59,14 +59,6 @@ contract Crowdsale is Owned {
         multisigTeam = newTeam;
     }
 
-    //function changeMinValue(uint amount) public onlyOwner {
-    //    minValue = amount;
-    //}
-
-    //function changeMaxValue(uint amount) public onlyOwner {
-    //    maxValue = amount;
-    //}
-
     function hardcap() public constant returns (uint256) {
         return 25500 ether; 
     }
@@ -96,7 +88,7 @@ contract Crowdsale is Owned {
     }
 
     function isAllowableAmount(uint amount) public constant returns (bool) {
-        return amount >= minValue;
+        return amount >= minValue && amount <= maxValue;
     }
 
     function isFreezingAmount(address backer) public constant returns (uint) {

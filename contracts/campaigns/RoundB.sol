@@ -18,7 +18,11 @@ contract RoundB is Crowdsale
         return isReachedHardCap() || getCurrentTime() > endTime;
     }
 
-    function isAllowableAmount(uint amount) public constant returns (bool) {
-        return amount >= minValue && amount <= maxValue;
+    function changeMinValue(uint amount) public onlyOwner {
+        minValue = amount;
+    }
+
+    function changeMaxValue(uint amount) public onlyOwner {
+        maxValue = amount;
     }
 }
