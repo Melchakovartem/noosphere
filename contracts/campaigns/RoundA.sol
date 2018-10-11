@@ -6,13 +6,14 @@ contract RoundA is Crowdsale
 {   
     bool public newRoundStarted = false;
 
-    function RoundA(address foundation, 
+    function RoundA(address beneficiary,
+                    address foundation, 
     	            address advisers, 
     	            address nodes, 
     	            address team, 
     	            uint start, 
     	            uint end) public
-        Crowdsale(foundation, advisers, nodes, team, start, end) {
+        Crowdsale(beneficiary, foundation, advisers, nodes, team, start, end) {
         	token = new Token();
         }
 

@@ -19,7 +19,8 @@ contract('Crowdsale', function(accounts) {
            newOwner: accounts[8],
            newAdvisers: accounts[9],
            newTeam: accounts[10],
-           managerKYC: accounts[11]
+           managerKYC: accounts[11],
+           beneficiary: accounts[12]
         };
     }
 
@@ -33,7 +34,7 @@ contract('Crowdsale', function(accounts) {
 
     async function instantiate() {
         const role = getRoles();
-        const crowdsale = await Crowdsale.new(role.foundation, role.advisers, 
+        const crowdsale = await Crowdsale.new(role.beneficiary, role.foundation, role.advisers, 
                                               role.nodes, role.team, startTime, 
                                               endTime, {from: role.owner});    
         const crowdsaleAddress = await crowdsale.address;

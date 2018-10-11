@@ -12,6 +12,8 @@ contract Crowdsale is Owned {
 
     Pool[] public pools;
 
+
+    address public beneficiary;
     address public multisigFoundation;
     address public multisigAdvisers;
     address public multisigNodes;
@@ -46,10 +48,11 @@ contract Crowdsale is Owned {
         _;
     }
     
-    function Crowdsale(address foundation, address advisers, 
+    function Crowdsale(address _beneficiary, address foundation, address advisers, 
                        address nodes, address team, 
                        uint start, uint end) {
         owner = msg.sender;
+        beneficiary = _beneficiary;
         multisigFoundation = foundation;
         multisigAdvisers = advisers;
         multisigNodes = nodes;
@@ -161,7 +164,7 @@ contract Crowdsale is Owned {
             amount = remain; 
         }
         
-        owner.transfer(amount);
+        beneficiary.transfer(amount);
         token.addCollected(amount);
         return amount;
     }

@@ -4,14 +4,15 @@ import '../Crowdsale.sol';
 
 contract RoundB is Crowdsale 
 {   
-    function RoundB(address tokenAddress,
+    function RoundB(address beneficiary,
+                    address tokenAddress,
     	            address foundation, 
     	            address advisers, 
     	            address nodes, 
     	            address team, 
     	            uint start, 
     	            uint end) public
-        Crowdsale(foundation, advisers, nodes, team, start, end) {
+        Crowdsale(beneficiary, foundation, advisers, nodes, team, start, end) {
         	token = Token(tokenAddress);
         }
     function isFinishedICO() public constant returns (bool finished) {

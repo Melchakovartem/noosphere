@@ -19,7 +19,8 @@ contract('RoundB', function(accounts) {
            foundation: accounts[4],
            advisers: accounts[5],
            nodes: accounts[6],
-           team: accounts[7]
+           team: accounts[7],
+           beneficiary: accounts[8]
         };
     }
 
@@ -48,7 +49,7 @@ contract('RoundB', function(accounts) {
 
     async function instantiate() {
         const role = getRoles();
-        const roundA = await RoundA.new(role.foundation, role.advisers, 
+        const roundA = await RoundA.new(role.beneficiary, role.foundation, role.advisers, 
                                         role.nodes, role.team, startTimeRoundA, 
                                         endTimeRoundA, {from: role.owner, gas: 6700000});
         const addressRoundA = await roundA.address;
@@ -56,7 +57,7 @@ contract('RoundB', function(accounts) {
         const token = await Token.at(await roundA.token());
         const tokenAddress = await token.address;
 
-        const roundB = await RoundB.new(tokenAddress, role.foundation, role.advisers, 
+        const roundB = await RoundB.new(role.beneficiary, tokenAddress, role.foundation, role.advisers, 
                                         role.nodes, role.team, startTimeRoundB, 
                                         endTimeRoundB, {from: role.owner, gas: 6700000});
         const addressRoundB = await roundB.address;
