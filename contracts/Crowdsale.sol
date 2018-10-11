@@ -27,7 +27,7 @@ contract Crowdsale is Owned {
     uint public minValue = 0.1 ether;
     uint public maxValue = 25500 ether;
 
-    mapping(address => uint256) frozenTokens;
+    mapping(address => uint) frozenTokens;
 
     address public managerKYC;
 
@@ -70,11 +70,11 @@ contract Crowdsale is Owned {
         multisigTeam = newTeam;
     }
 
-    function hardcap() public constant returns (uint256) {
+    function hardcap() public constant returns (uint) {
         return 25500 ether; 
     }
 
-    function maxBonusTokens() public constant returns (uint256) {
+    function maxBonusTokens() public constant returns (uint) {
         return 622545000000000000000000;
     }
 
@@ -131,18 +131,18 @@ contract Crowdsale is Owned {
 
         tokenDistribution();
 
-        for (uint256 i = 0; i < pools.length; i++) {
+        for (uint i = 0; i < pools.length; i++) {
             token.mint(pools[i].multisig, tokensForDistribution * pools[i].percent / 100);
         }
     }
 
-    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
+    function getBonus(uint money, uint tokens) internal returns (uint additionalTokens) {
         uint bonus = 0;
 
         return bonus;
     }
 
-    function getTokens(uint amount, address backer) internal returns (uint256) {
+    function getTokens(uint amount, address backer) internal returns (uint) {
         uint tokens = token.tokenMultiplier() * amount / token.pricePerTokenInWei();
         uint bonusTokens = getBonus(amount, tokens);   
 

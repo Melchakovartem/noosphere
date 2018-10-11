@@ -100,4 +100,34 @@ contract('Token', function(accounts) {
     	assert.equal(await nzt.balanceOf(role.investor2), 0);
     	assert.equal(await nzt.totalSupply(), 0.1e20);
     })
+
+    it('burns tokesn', async function() {
+        noosphereAddress = 'address';
+        await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
+        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+
+        await nzt.burn(0.1e20, noosphereAddress, {from: role.investor1});
+
+        assert.equal(await nzt.balanceOf(role.investor1), 0);
+        assert.equal(await nzt.totalSupply(), 0);
+        assert.equal(await nzt.noosphereBalance('address'), 0.1e20);
+    })
+
+    it('burns tokens partially', async function() {
+        noosphereAddress = 'address';
+        await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
+        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+
+        await nzt.burn(0.5e19, noosphereAddress, {from: role.investor1});
+
+        assert.equal(await nzt.balanceOf(role.investor1), 0.5e19);
+        assert.equal(await nzt.totalSupply(), 0.5e19);
+        assert.equal(await nzt.noosphereBalance('address'), 0.5e19);
+
+        await nzt.burn(0.5e19, noosphereAddress, {from: role.investor1});
+
+        assert.equal(await nzt.balanceOf(role.investor1), 0);
+        assert.equal(await nzt.totalSupply(), 0);
+        assert.equal(await nzt.noosphereBalance('address'), 0.1e20);
+    })
 })

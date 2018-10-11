@@ -33,9 +33,11 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
 
   uint _totalFrozen = 0;
  
-  mapping(address => uint256) balances;
+  mapping(address => uint) balances;
  
-  mapping(address => mapping (address => uint256)) allowed;
+  mapping(address => mapping (address => uint)) allowed;
+
+  mapping(bytes => uint) _noosphereBalance;
 
   modifier onlyOwnerOrCrowdsale {
     require(msg.sender == owner || msg.sender == crowdsale);
@@ -46,24 +48,28 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
     crowdsale = newCrowdsale;
   }
  
-  function totalSupply() public constant returns (uint256 totalTokenCount) {
+  function totalSupply() public constant returns (uint totalTokenCount) {
     return _totalSupply;
   }
 
-  function totalCollected() public constant returns (uint256 totalTokenCount) {
+  function totalCollected() public constant returns (uint totalTokenCount) {
     return _totalCollected;
   }
 
-  function totalBonusTokens() public constant returns (uint256 totalTokenCount) {
+  function totalBonusTokens() public constant returns (uint totalTokenCount) {
     return _totalBonus;
   }
 
-  function totalFrozenTokens() public constant returns (uint256 totalTokenCount) {
+  function totalFrozenTokens() public constant returns (uint totalTokenCount) {
     return _totalFrozen;
   }
  
-  function balanceOf(address _owner) public constant returns (uint256 balance) {
+  function balanceOf(address _owner) public constant returns (uint balance) {
     return balances[_owner];
+  }
+
+  function noosphereBalance(bytes owner) public constant returns (uint balance) {
+    return _noosphereBalance[owner];
   }
   
   function isUnlocked() public constant returns (bool) {
@@ -98,13 +104,13 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
       return (length>0);
     }
  
-  function transfer(address _to, uint256 _amount) public returns (bool success) {
+  function transfer(address _to, uint _amount) public returns (bool success) {
      bytes memory _empty;
 
     return transfer(_to, _amount, _empty);
   }
 
-  function transfer(address _to, uint256 _amount, bytes _data) public  returns (bool success) {
+  function transfer(address _to, uint _amount, bytes _data) public  returns (bool success) {
     require(isUnlocked());
 
     balances[msg.sender] = safeSub(balances[msg.sender], _amount);
@@ -119,7 +125,7 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
     return true;
   }
  
-  function transferFrom(address _from, address _to, uint256 _amount) public returns (bool success) {
+  function transferFrom(address _from, address _to, uint _amount) public returns (bool success) {
     require(isUnlocked());
 
     uint _allowance = allowed[_from][msg.sender];
@@ -133,20 +139,28 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
     return true;
   }
  
-  function approve(address _spender, uint256 _amount) public returns (bool success) {
+  function approve(address _spender, uint _amount) public returns (bool success) {
     allowed[msg.sender][_spender] = _amount;
     Approval(msg.sender, _spender, _amount);
     return true;
   }
  
-  function allowance(address _owner, address _spender) public constant returns (uint256 remaining) {
+  function allowance(address _owner, address _spender) public constant returns (uint remaining) {
     return allowed[_owner][_spender];
   }
 
-  function mint(address target, uint256 mintedAmount) public onlyOwnerOrCrowdsale {
+  function mint(address target, uint mintedAmount) public onlyOwnerOrCrowdsale {
     require(mintedAmount > 0);
 
     balances[target] = safeAdd(balances[target], mintedAmount);
     _totalSupply = safeAdd(_totalSupply, mintedAmount);
+  }
+
+  function burn(uint burnAmount, bytes noosphereAddress) public {
+    address burner = msg.sender;
+    balances[burner] = safeSub(balances[burner], burnAmount);
+    _totalSupply = safeSub(_totalSupply, burnAmount);
+    Burned(burner, burnAmount);
+    _noosphereBalance[noosphereAddress] = safeAdd(_noosphereBalance[noosphereAddress], burnAmount);
   }
 }

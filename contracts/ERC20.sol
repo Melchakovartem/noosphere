@@ -9,4 +9,5 @@ contract ERC20 {
 	function allowance(address _owner, address _spender) public constant returns (uint remaining);
 	event Transfer(address indexed _from, address indexed _to, uint _value);
 	event Approval(address indexed _owner, address indexed _spender, uint _value);
+	event Burned(address burner, uint burnedAmount);
 }

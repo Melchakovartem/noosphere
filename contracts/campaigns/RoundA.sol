@@ -22,7 +22,7 @@ contract RoundA is Crowdsale
         newRoundStarted = true;
     }
 
-    function getBonus(uint money, uint tokens) internal returns (uint256 additionalTokens) {
+    function getBonus(uint money, uint tokens) internal returns (uint additionalTokens) {
         uint bonus = 0;
         uint remainBonusTokens = maxBonusTokens() - token.totalBonusTokens();
 
