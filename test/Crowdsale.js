@@ -186,7 +186,7 @@ contract('Crowdsale', function(accounts) {
         await crowdsale.setTime(startTime + 10, {from: role.owner});
 
         await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
-        
+
         assert.equal(await token.balanceOf(role.investor1), 0);
         assert.equal(await token.totalSupply(), 0);
         assert.equal(await token.totalCollected(), ethInvest1);
@@ -240,6 +240,22 @@ contract('Crowdsale', function(accounts) {
         
         assert.equal(await crowdsale.isFreezingAmount(role.investor1), 0);
         assert.equal(await token.balanceOf(role.investor1), purchasedTokens);
+    })
+
+    it('funds a second time', async function() {
+        ethInvest = ETH(3.785);
+        
+        purchasedTokens = getPurchasedTokens(ethInvest);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
+
+        assert.equal(await crowdsale.isFreezingAmount(role.investor1), purchasedTokens);
+
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest});
+
+        assert.equal(await crowdsale.isFreezingAmount(role.investor1), 2 * purchasedTokens);
     })
 })
 

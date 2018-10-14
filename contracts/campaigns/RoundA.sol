@@ -15,6 +15,7 @@ contract RoundA is Crowdsale
     	            uint end) public
         Crowdsale(beneficiary, foundation, advisers, nodes, team, start, end) {
         	token = new Token();
+            vesting = new Vesting(token);
         }
 
     function startRoundB(address roundB) public onlyOwner {
@@ -23,8 +24,12 @@ contract RoundA is Crowdsale
         newRoundStarted = true;
     }
 
-    function getBonus(uint money, uint tokens) internal returns (uint additionalTokens) {
+    function getBonusTokens(uint money, address backer) internal {
+
         uint bonus = 0;
+
+        uint tokens = token.tokenMultiplier() * money / token.pricePerTokenInWei();
+
         uint remainBonusTokens = maxBonusTokens() - token.totalBonusTokens();
 
         if (money >= 250 ether) {
@@ -36,8 +41,14 @@ contract RoundA is Crowdsale
 
         if (remainBonusTokens < bonus) {
             bonus = remainBonusTokens;
-        } 
+        }
 
-        return bonus;
+        frozenTokens[backer] += bonus;
+
+        token.addTotalBonus(bonus);
+
+        token.addTotalFrozen(bonus);
+
+        //return bonus;
     }
 }

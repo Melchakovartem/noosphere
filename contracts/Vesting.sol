@@ -61,8 +61,8 @@ contract Vesting {
     }
 
     if (typeOfLock == lockType.foundation) {
-        uint passedMonths = (now - startTime) / 30 * days;
-        unlockedTokens = (amount / 12) * passedMonths;
+        uint passedMonths = (now - startTime) / 30 days;
+        uint unlockedTokens = (amount / 12) * passedMonths;
         uint availableForRecieve = withdrownTokensForFoundation - unlockedTokens;
         withdrownTokensForFoundation = availableForRecieve;
         token.transfer(msg.sender, availableForRecieve);

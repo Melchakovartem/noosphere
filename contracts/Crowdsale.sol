@@ -2,6 +2,7 @@ pragma solidity ^0.4.15;
 
 import "./Owned.sol";
 import "./Token.sol";
+import "./Vesting.sol";
 
 contract Crowdsale is Owned {
 
@@ -32,6 +33,8 @@ contract Crowdsale is Owned {
     mapping(address => uint) frozenTokens;
 
     address public managerKYC;
+
+    Vesting public vesting;
 
     modifier isOpen {
         require(isOpened());
@@ -128,6 +131,7 @@ contract Crowdsale is Owned {
     
 
     function setIcoSucceeded() public onlyOwner {
+
         require(isFinishedICO());
 
         uint tokensForDistribution = (token.totalSupply() + token.totalFrozenTokens()) * 100 / 32;
@@ -139,24 +143,24 @@ contract Crowdsale is Owned {
         }
     }
 
-    function getBonus(uint money, uint tokens) internal returns (uint additionalTokens) {
-        uint bonus = 0;
+    function getBonusTokens(uint money, address backer) internal {
 
-        return bonus;
     }
 
     function getTokens(uint amount, address backer) internal returns (uint) {
+
         uint tokens = token.tokenMultiplier() * amount / token.pricePerTokenInWei();
-        uint bonusTokens = getBonus(amount, tokens);   
 
-        token.addTotalBonus(bonusTokens);
+        getBonusTokens(amount, backer);
 
-        tokens += bonusTokens;
-        return tokens;
+        frozenTokens[backer] += tokens;
+
+        token.addTotalFrozen(tokens);
     }
 
 
     function processPayment(uint amount, address backer) private returns (uint) {
+
         uint remain = hardcap() - token.totalCollected();
 
         if (remain < amount) {
@@ -165,25 +169,25 @@ contract Crowdsale is Owned {
         }
         
         beneficiary.transfer(amount);
+
         token.addCollected(amount);
+
         return amount;
     }
 
     function() external isOpen isUnpaused payable {
+
         require(!isFinishedICO());
 
         require(isAllowableAmount(msg.value));
         
         uint amount = msg.value;
+
         address backer = msg.sender;
 
         amount = processPayment(amount, backer);
 
         uint tokensAmount = getTokens(amount, backer);
-
-        frozenTokens[backer] = tokensAmount;
-
-        token.addTotalFrozen(tokensAmount);
     }
 
     function addPool(address to, uint percent) public onlyOwner
