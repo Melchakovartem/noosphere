@@ -6,16 +6,6 @@ import "./Vesting.sol";
 
 contract Crowdsale is Owned {
 
-    enum lockType { foundation, advisers, nodes, team, pools, earlyBirds }
-
-    struct Pool {
-        address multisig;
-        uint percent;
-    }
-
-    Pool[] public pools;
-
-
     address public beneficiary;
     address public multisigFoundation;
     address public multisigAdvisers;
@@ -128,32 +118,18 @@ contract Crowdsale is Owned {
     function deposit() public payable onlyOwner {
     }
 
-    function tokenDistribution() private {
-        addPool(multisigFoundation, 29);
-        addPool(multisigAdvisers, 6);
-        addPool(multisigNodes, 26);
-        addPool(multisigTeam, 7);
-    }
-    
-
     function setIcoSucceeded() public onlyOwner {
 
         require(isFinishedICO());
 
         uint tokensForDistribution = (token.totalSupply() + token.totalFrozenTokens()) * 100 / 32;
 
-        //tokenDistribution();
-
         token.mint(vesting, tokensForDistribution);
 
-        vesting.setLock(multisigFoundation, tokensForDistribution * 29 / 100, getCurrentTime() + 120 * 1 days);
-        vesting.setLock(multisigAdvisers, tokensForDistribution * 6 / 100, getCurrentTime() + 120 * 1 days);
+        vesting.setLock(multisigFoundation, tokensForDistribution * 29 / 100, getCurrentTime() + 365 * 1 days);
+        vesting.setLock(multisigAdvisers, tokensForDistribution * 6 / 100, getCurrentTime() + 365 * 1 days);
         vesting.setLock(multisigNodes, tokensForDistribution * 26 / 100, getCurrentTime() + 120 * 1 days);
-        vesting.setLock(multisigTeam, tokensForDistribution * 7 / 100, getCurrentTime() + 120 * 1 days);
-
-        //for (uint i = 0; i < pools.length; i++) {
-        //    token.mint(pools[i].multisig, tokensForDistribution * pools[i].percent / 100);
-        //}
+        vesting.setLock(multisigTeam, tokensForDistribution * 7 / 100, getCurrentTime() + 365 * 1 days);
     }
 
     function getBonusTokens(uint money, address backer) internal {
@@ -201,13 +177,6 @@ contract Crowdsale is Owned {
         amount = processPayment(amount, backer);
 
         uint tokensAmount = getTokens(amount, backer);
-    }
-
-    function addPool(address to, uint percent) public onlyOwner
-    {
-        require(percent > 0);
-
-        pools.push(Pool({multisig:to, percent: percent}));
     }
 
     function getCurrentTime() internal constant returns (uint) {

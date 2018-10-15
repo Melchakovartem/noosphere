@@ -57,12 +57,14 @@ contract('RoundA', function(accounts) {
 
         const token = await Token.at(await roundA.token());
 
-        const roundB = await RoundB.new(role.beneficiary, token.address, role.foundation, role.advisers, 
+        const vesting = await Vesting.at(await roundA.vesting());
+
+        const roundB = await RoundB.new(vesting.address, role.beneficiary, token.address, role.foundation, role.advisers, 
                                   role.nodes, role.team, startTimeRoundB, 
                                   endTimeRoundB, {from: role.owner, gas: 6700000});
         const addressRoundB = await roundB.address;
 
-        const vesting = await Vesting.at(await roundA.vesting());
+        
 
         return [roundA, addressRoundA, roundB, addressRoundB,  token, role, vesting];
     };
@@ -234,7 +236,7 @@ contract('RoundA', function(accounts) {
         distribution = getTokensDistribution(totalTokens);
 
         await roundA.setIcoSucceeded({from: role.owner});
-        
+
         assert.equal(await vesting.getLockedAmount({from: role.foundation}), distribution["foundation"]);
         assert.equal(await vesting.getLockedAmount({from: role.nodes}), distribution["nodes"]);
         assert.equal(await vesting.getLockedAmount({from: role.team}), distribution["team"]);

@@ -20,17 +20,6 @@ contract Vesting is Owned {
 
   mapping(address => uint) lockedAmount;
 
-  address public crowdsale;
-
-  modifier onlyOwnerOrCrowdsale {
-    require(msg.sender == owner || msg.sender == crowdsale);
-    _;
-  }
-
-  function changeCrowdsale(address newCrowdsale) public onlyOwner {
-    crowdsale = newCrowdsale;
-  }
-
   function Vesting(address tokenAddress) {
     token = ERC223Interface(tokenAddress);
   }
@@ -43,7 +32,7 @@ contract Vesting is Owned {
     return lockedAmount[msg.sender];
   }
 
-  function setLock(address tokenHolder, uint amount, uint256 lockTime) public onlyOwnerOrCrowdsale {
+  function setLock(address tokenHolder, uint amount, uint256 lockTime) public onlyOwner {
     if (lockedTillTime[tokenHolder] < lockTime) {
       lockedTillTime[tokenHolder] = lockTime;
     }

@@ -58,12 +58,13 @@ contract('RoundB', function(accounts) {
         const token = await Token.at(await roundA.token());
         const tokenAddress = await token.address;
 
-        const roundB = await RoundB.new(role.beneficiary, tokenAddress, role.foundation, role.advisers, 
+        const vesting = await Vesting.at(await roundA.vesting(), {from: role.owner});
+
+        const roundB = await RoundB.new(vesting.address, role.beneficiary, tokenAddress, role.foundation, role.advisers, 
                                         role.nodes, role.team, startTimeRoundB, 
                                         endTimeRoundB, {from: role.owner, gas: 6700000});
         const addressRoundB = await roundB.address;
 
-        const vesting = await Vesting.at(await roundA.vesting(), {from: role.owner});
 
         return [roundA, addressRoundA, roundB, addressRoundB,  token, tokenAddress, role, vesting];
     };
@@ -142,10 +143,10 @@ contract('RoundB', function(accounts) {
 
         await roundB.setIcoSucceeded({from: role.owner});
         
-        assert.equal(rounding(await token.balanceOf(role.foundation)), rounding(distribution["foundation"]));
-        assert.equal(rounding(await token.balanceOf(role.nodes)), rounding(distribution["nodes"]));
-        assert.equal(rounding(await token.balanceOf(role.team)), rounding(distribution["team"]));
-        assert.equal(rounding(await token.balanceOf(role.advisers)), rounding(distribution["advisers"]));
+        assert.equal(await vesting.getLockedAmount({from: role.foundation}), distribution["foundation"]);
+        assert.equal(await vesting.getLockedAmount({from: role.nodes}), distribution["nodes"]);
+        assert.equal(await vesting.getLockedAmount({from: role.team}), distribution["team"]);
+        assert.equal(await vesting.getLockedAmount({from: role.advisers}), distribution["advisers"]);
     })
 
     it('distributes tokens when time is ended', async function(){
@@ -168,10 +169,10 @@ contract('RoundB', function(accounts) {
 
         await roundB.setIcoSucceeded({from: role.owner});
         
-        assert.equal(rounding(await token.balanceOf(role.foundation)), rounding(distribution["foundation"]));
-        assert.equal(rounding(await token.balanceOf(role.nodes)), rounding(distribution["nodes"]));
-        assert.equal(rounding(await token.balanceOf(role.team)), rounding(distribution["team"]));
-        assert.equal(rounding(await token.balanceOf(role.advisers)), rounding(distribution["advisers"]));
+        assert.equal(await vesting.getLockedAmount({from: role.foundation}), distribution["foundation"]);
+        //assert.equal(await vesting.getLockedAmount({from: role.nodes}), distribution["nodes"]);
+        //assert.equal(await vesting.getLockedAmount({from: role.team}), distribution["team"]);
+        //assert.equal(await vesting.getLockedAmount({from: role.advisers}), distribution["advisers"]);
     })
 
     it('does not distribute tokens when time is not ended and hard cap is not reached', async function(){

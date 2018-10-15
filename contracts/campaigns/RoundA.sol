@@ -22,7 +22,7 @@ contract RoundA is Crowdsale
     function startRoundB(address roundB) public onlyOwner {
     	require(getCurrentTime() > endTime && !newRoundStarted);
     	token.changeCrowdsale(roundB);
-        //vesting.changeOwner(roundB);
+        vesting.changeOwner(roundB);
         newRoundStarted = true;
     }
 

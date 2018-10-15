@@ -4,7 +4,8 @@ import '../Crowdsale.sol';
 
 contract RoundB is Crowdsale 
 {   
-    function RoundB(address beneficiary,
+    function RoundB(address vestingAddress,
+                    address beneficiary,
                     address tokenAddress,
     	            address foundation, 
     	            address advisers, 
@@ -14,7 +15,7 @@ contract RoundB is Crowdsale
     	            uint end) public
         Crowdsale(beneficiary, foundation, advisers, nodes, team, start, end) {
         	token = Token(tokenAddress);
-            vesting = Vesting(token);
+            vesting = Vesting(vestingAddress);
         }
     function isFinishedICO() public constant returns (bool finished) {
         return isReachedHardCap() || getCurrentTime() > endTime;

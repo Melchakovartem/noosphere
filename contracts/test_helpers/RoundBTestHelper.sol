@@ -7,14 +7,15 @@ import "./TimeTestHelper.sol";
 ///DONT use it in production!
 contract RoundBTestHelper is RoundB, TimeTestHelper
 {
-    function RoundBTestHelper(address beneficiary,
-    	                      address tokenAddress,
+    function RoundBTestHelper(address vestingAddress,
+                              address beneficiary,
+    	                        address tokenAddress,
                               address foundation, 
                               address advisers, 
                               address nodes, 
                               address team, 
                               uint start, 
                               uint end) public
-        RoundB(beneficiary, tokenAddress, foundation, advisers, nodes, team, start, end) {
+        RoundB(vestingAddress, beneficiary, tokenAddress, foundation, advisers, nodes, team, start, end) {
         }
 }
