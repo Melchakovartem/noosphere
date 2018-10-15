@@ -257,6 +257,47 @@ contract('Crowdsale', function(accounts) {
 
         assert.equal(await crowdsale.isFreezingAmount(role.investor1), 2 * purchasedTokens);
     })
+
+    it('transfers tokens when accept KYC', async function() {
+        ethInvest1 = ETH(3.785);
+        purchasedTokens = getPurchasedTokens(ethInvest1);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
+
+        await crowdsale.changeManagerKYC(role.managerKYC, {from: role.owner})
+
+        await crowdsale.acceptKYC(role.investor1, {from: role.managerKYC});
+        
+        await token.transfer(role.investor2, purchasedTokens, {from: role.investor1});
+
+        assert.equal(await token.balanceOf(role.investor2), purchasedTokens);
+    })
+
+    it('stops all transfers', async function() {
+        ethInvest1 = ETH(25500);
+
+        purchasedTokens = getPurchasedTokens(ethInvest1);
+
+        await crowdsale.setTime(startTime + 10, {from: role.owner});
+
+        await crowdsale.sendTransaction({from: role.investor1, to: crowdsaleAddress, value: ethInvest1});
+
+        await crowdsale.changeManagerKYC(role.managerKYC, {from: role.owner})
+
+        await crowdsale.acceptKYC(role.investor1, {from: role.managerKYC});
+
+        await crowdsale.stopAllTransfers({from: role.owner});
+
+        try {
+           await token.transfer(role.investor2, purchasedTokens, {from: role.investor1});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+
+        assert.equal(await token.balanceOf(role.investor2), 0);
+    })
 })
 
 

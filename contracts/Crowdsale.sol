@@ -93,6 +93,11 @@ contract Crowdsale is Owned {
         paused = false;
     }
 
+    function stopAllTransfers() onlyOwner {
+        require(isFinishedICO());
+        token.setLocked();
+    }
+
     function isReachedHardCap() public constant returns (bool reached) {
         return token.totalCollected() >= hardcap();
     }
