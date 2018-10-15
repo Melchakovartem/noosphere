@@ -34,25 +34,26 @@ contract RoundA is Crowdsale
 
         uint remainBonusTokens = maxBonusTokens() - token.totalBonusTokens();
 
+        uint lockTime = 0;
+
         if (money >= 250 ether) {
             bonus = tokens * 15 / 100;
-            token.mint(vesting, bonus);
-            vesting.setLock(backer, bonus, getCurrentTime() + 90 * 1 days);
+            lockTime = getCurrentTime() + 90 * 1 days;
         }
+
         if (money >= 50 ether && money < 250 ether) {
             bonus = tokens * 20 / 100;
-            token.mint(vesting, bonus);
-            vesting.setLock(backer, bonus, getCurrentTime() + 120 * 1 days);
+            lockTime = getCurrentTime() + 120 * 1 days;
         }
 
         if (remainBonusTokens < bonus) {
             bonus = remainBonusTokens;
         }
-
-        //frozenTokens[backer] += bonus;
-
-        token.addTotalBonus(bonus);
-
-        //token.addTotalFrozen(bonus);
+        
+        if (bonus > 0) {
+            token.mint(vesting, bonus);
+            vesting.setLock(backer, bonus, lockTime);
+            token.addTotalBonus(bonus);
+        }
     }
 }

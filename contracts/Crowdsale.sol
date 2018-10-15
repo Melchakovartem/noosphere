@@ -142,11 +142,18 @@ contract Crowdsale is Owned {
 
         uint tokensForDistribution = (token.totalSupply() + token.totalFrozenTokens()) * 100 / 32;
 
-        tokenDistribution();
+        //tokenDistribution();
 
-        for (uint i = 0; i < pools.length; i++) {
-            token.mint(pools[i].multisig, tokensForDistribution * pools[i].percent / 100);
-        }
+        token.mint(vesting, tokensForDistribution);
+
+        vesting.setLock(multisigFoundation, tokensForDistribution * 29 / 100, getCurrentTime() + 120 * 1 days);
+        vesting.setLock(multisigAdvisers, tokensForDistribution * 6 / 100, getCurrentTime() + 120 * 1 days);
+        vesting.setLock(multisigNodes, tokensForDistribution * 26 / 100, getCurrentTime() + 120 * 1 days);
+        vesting.setLock(multisigTeam, tokensForDistribution * 7 / 100, getCurrentTime() + 120 * 1 days);
+
+        //for (uint i = 0; i < pools.length; i++) {
+        //    token.mint(pools[i].multisig, tokensForDistribution * pools[i].percent / 100);
+        //}
     }
 
     function getBonusTokens(uint money, address backer) internal {

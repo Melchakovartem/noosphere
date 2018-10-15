@@ -235,10 +235,10 @@ contract('RoundA', function(accounts) {
 
         await roundA.setIcoSucceeded({from: role.owner});
         
-        assert.equal(rounding(await token.balanceOf(role.foundation)), rounding(distribution["foundation"]));
-        assert.equal(rounding(await token.balanceOf(role.nodes)), rounding(distribution["nodes"]));
-        assert.equal(rounding(await token.balanceOf(role.team)), rounding(distribution["team"]));
-        assert.equal(rounding(await token.balanceOf(role.advisers)), rounding(distribution["advisers"]));
+        assert.equal(await vesting.getLockedAmount({from: role.foundation}), distribution["foundation"]);
+        assert.equal(await vesting.getLockedAmount({from: role.nodes}), distribution["nodes"]);
+        assert.equal(await vesting.getLockedAmount({from: role.team}), distribution["team"]);
+        assert.equal(await vesting.getLockedAmount({from: role.advisers}), distribution["advisers"]);
     })
 })
 
