@@ -1,5 +1,6 @@
 const RoundA = artifacts.require('./test_helpers/RoundATestHelper.sol');
 const RoundB = artifacts.require('./test_helpers/RoundBTestHelper.sol');
+const Vesting = artifacts.require('./test_helpers/VestingTestHelper.sol');
 const Token = artifacts.require('./Token');
 
 contract('RoundB', function(accounts) {
@@ -62,12 +63,18 @@ contract('RoundB', function(accounts) {
                                         endTimeRoundB, {from: role.owner, gas: 6700000});
         const addressRoundB = await roundB.address;
 
-        return [roundA, addressRoundA, roundB, addressRoundB,  token, tokenAddress, role];
+        const vesting = await Vesting.new(await token.address, {from: role.owner});
+
+        return [roundA, addressRoundA, roundB, addressRoundB,  token, tokenAddress, role, vesting];
     };
     
 	beforeEach('setup contract for each test', async function () {
-        [roundA, addressRoundA, roundB, addressRoundB, token, tokenAddress, role] = await instantiate();
+        [roundA, addressRoundA, roundB, addressRoundB, token, tokenAddress, role, vesting] = await instantiate();
         ethInvest = ETH(25399.7);
+
+        await roundA.setVesting(vesting.address, {from: role.owner});
+        
+        await vesting.changeCrowdsale(addressRoundA, {from: role.owner});
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 

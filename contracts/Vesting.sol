@@ -12,61 +12,53 @@ contract ERC223Interface {
     event Transfer(address indexed from, address indexed to, uint value, bytes data);
 }
 
-contract Vesting {
-
-  enum lockType { foundation, advisers, nodes, team, pools, earlyBirds }
-
-  mapping(address => uint) locked;
-
-  mapping(address => lockType) tokenholderLockedType;
+contract Vesting is Owned {
     
   ERC223Interface public token;
 
-  uint public startTime;
+  mapping(address => uint256) lockedTillTime;
 
-  uint public withdrownTokensForFoundation;
+  mapping(address => uint) lockedAmount;
+
+  address public crowdsale;
+
+  modifier onlyOwnerOrCrowdsale {
+    require(msg.sender == owner || msg.sender == crowdsale);
+    _;
+  }
+
+  function changeCrowdsale(address newCrowdsale) public onlyOwner {
+    crowdsale = newCrowdsale;
+  }
 
   function Vesting(address tokenAddress) {
     token = ERC223Interface(tokenAddress);
-    startTime = now;
   }
 
-  function setLock(address tokenHolder, uint amount, lockType typeOfLock) public {
-    locked[tokenHolder] = amount;
-    tokenholderLockedType[tokenHolder] = typeOfLock;
+  function isUnlocked(address tokenHolder) public constant returns (bool unlocked) {
+    return lockedTillTime[tokenHolder] < getCurrentTime();
+  }
+
+  function getLockedAmount() public constant returns (uint) {
+    return lockedAmount[msg.sender];
+  }
+
+  function setLock(address tokenHolder, uint amount, uint256 lockTime) public onlyOwnerOrCrowdsale {
+    if (lockedTillTime[tokenHolder] < lockTime) {
+      lockedTillTime[tokenHolder] = lockTime;
+    }
+
+    lockedAmount[tokenHolder] = amount;
+    lockedTillTime[tokenHolder] = lockTime;
   }
 
   function recieveMyTokens() public {
-    lockType typeOfLock = tokenholderLockedType[msg.sender];
-    uint amount = locked[msg.sender];
+    require(isUnlocked(msg.sender));
+    token.transfer(msg.sender, lockedAmount[msg.sender]);
+  }
 
-    if (typeOfLock == lockType.advisers && now >= startTime + 1 years) {
-        token.transfer(msg.sender, amount);
-    }
-    
-    if (typeOfLock == lockType.team && now >= startTime + 1 years) {
-        token.transfer(msg.sender, amount);
-    }
-    
-    if (typeOfLock == lockType.nodes && now >= startTime + 120 days) {
-        token.transfer(msg.sender, amount);
-    }
-
-    if (typeOfLock == lockType.pools && now >= startTime + 90 days) {
-        token.transfer(msg.sender, amount);
-    }
-
-    if (typeOfLock == lockType.earlyBirds && now >= startTime + 120 days) {
-        token.transfer(msg.sender, amount);
-    }
-
-    if (typeOfLock == lockType.foundation) {
-        uint passedMonths = (now - startTime) / 30 days;
-        uint unlockedTokens = (amount / 12) * passedMonths;
-        uint availableForRecieve = withdrownTokensForFoundation - unlockedTokens;
-        withdrownTokensForFoundation = availableForRecieve;
-        token.transfer(msg.sender, availableForRecieve);
-    }
+  function getCurrentTime() internal constant returns (uint) {
+    return now;
   }
 }
 

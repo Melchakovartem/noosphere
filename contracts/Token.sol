@@ -111,7 +111,6 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
   }
 
   function transfer(address _to, uint _amount, bytes _data) public  returns (bool success) {
-    require(isUnlocked());
 
     balances[msg.sender] = safeSub(balances[msg.sender], _amount);
     balances[_to] = safeAdd(balances[_to], _amount);
@@ -126,7 +125,6 @@ contract Token is ERC20, ERC223, Owned, SafeMath {
   }
  
   function transferFrom(address _from, address _to, uint _amount) public returns (bool success) {
-    require(isUnlocked());
 
     uint _allowance = allowed[_from][msg.sender];
 

@@ -6,6 +6,8 @@ import "./Vesting.sol";
 
 contract Crowdsale is Owned {
 
+    enum lockType { foundation, advisers, nodes, team, pools, earlyBirds }
+
     struct Pool {
         address multisig;
         uint percent;
@@ -26,6 +28,7 @@ contract Crowdsale is Owned {
     bool public paused = false;
 
     Token public token;
+    Vesting public vesting;
 
     uint public minValue = 0.1 ether;
     uint public maxValue = 25500 ether;
@@ -33,8 +36,6 @@ contract Crowdsale is Owned {
     mapping(address => uint) frozenTokens;
 
     address public managerKYC;
-
-    Vesting public vesting;
 
     modifier isOpen {
         require(isOpened());
@@ -62,6 +63,10 @@ contract Crowdsale is Owned {
         multisigTeam = team;
         startTime = start;
         endTime = end;
+    }
+
+    function setVesting(address vestingAddress) public onlyOwner {
+        vesting = Vesting(vestingAddress);
     }
 
     function changeManagerKYC(address newManagerKYC) public onlyOwner {

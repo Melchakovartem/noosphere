@@ -1,5 +1,6 @@
 const RoundA = artifacts.require('./test_helpers/RoundATestHelper.sol');
 const RoundB = artifacts.require('./campaigns/RoundB.sol');
+const Vesting = artifacts.require('./test_helpers/VestingTestHelper.sol');
 const Token = artifacts.require('./Token');
 
 contract('RoundA', function(accounts) {
@@ -61,11 +62,15 @@ contract('RoundA', function(accounts) {
                                   endTimeRoundB, {from: role.owner, gas: 6700000});
         const addressRoundB = await roundB.address;
 
-        return [roundA, addressRoundA, roundB, addressRoundB,  token, role];
+        const vesting = await Vesting.new(await token.address, {from: role.owner});
+
+        return [roundA, addressRoundA, roundB, addressRoundB,  token, role, vesting];
     };
     
 	beforeEach('setup contract for each test', async function () {
-        [roundA, addressRoundA, roundB, addressRoundB, token, role] = await instantiate();
+        [roundA, addressRoundA, roundB, addressRoundB, token, role, vesting] = await instantiate();
+        await roundA.setVesting(vesting.address, {from: role.owner});
+        await vesting.changeCrowdsale(addressRoundA, {from: role.owner});
     })
 
     it('has an owner', async function () {
@@ -92,15 +97,16 @@ contract('RoundA', function(accounts) {
     it('recievs bonus 15% tokens when invest >= 250 ETH', async function() {
         ethInvest = ETH(378.5);
         purchasedTokens = getPurchasedTokens(ethInvest);
-        bonusTokens = purchasedTokens * 0.15;
-        totalTokens = rounding(bonusTokens + purchasedTokens);
+        bonusTokens = rounding(purchasedTokens * 0.15);
 
         await roundA.setTime(startTimeRoundA + 10, {from: role.owner});
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
 
-        assert.equal(await roundA.isFreezingAmount(role.investor1), totalTokens);
-        assert.equal(await token.totalFrozenTokens(), totalTokens);
+        assert.equal(await roundA.isFreezingAmount(role.investor1), purchasedTokens);
+        assert.equal(await token.totalFrozenTokens(), purchasedTokens);
+        assert.equal(await token.balanceOf(vesting.address), bonusTokens);
+        assert.equal(await vesting.getLockedAmount({from: role.investor1}), bonusTokens);
         assert.equal(await token.totalCollected(), ethInvest);
     })
 
@@ -114,8 +120,10 @@ contract('RoundA', function(accounts) {
 
         await roundA.sendTransaction({from: role.investor1, to: addressRoundA, value: ethInvest});
 
-        assert.equal(await roundA.isFreezingAmount(role.investor1), totalTokens);
-        assert.equal(await token.totalFrozenTokens(), totalTokens);
+        assert.equal(await roundA.isFreezingAmount(role.investor1), purchasedTokens);
+        assert.equal(await token.totalFrozenTokens(), purchasedTokens);
+        assert.equal(await token.balanceOf(vesting.address), bonusTokens);
+        assert.equal(await vesting.getLockedAmount({from: role.investor1}), bonusTokens);
         assert.equal(await token.totalCollected(), ethInvest);
     })
 

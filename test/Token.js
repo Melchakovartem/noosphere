@@ -31,7 +31,7 @@ contract('Token', function(accounts) {
         assert.equal(await nzt.owner(), role.newOwner);
     })
 
-    it('transfers tokens after set unlocked', async function() {
+    it('transfers tokens', async function() {
     	await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
     	assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
 
@@ -47,7 +47,7 @@ contract('Token', function(accounts) {
     	assert.equal(await nzt.totalSupply(), 0.1e20);
     })
 
-    it('transfers allowed tokens after set unlocked', async function() {
+    it('transfers allowed tokens', async function() {
         await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
         assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
         
@@ -66,42 +66,8 @@ contract('Token', function(accounts) {
         assert.equal(await nzt.totalSupply(), 0.1e20);
     })
 
-    it('tries to transfer allowed tokens when unlocked', async function() {
-        await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
-        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
-        assert.equal(await nzt.isUnlocked(), false);
 
-        await nzt.approve(role.investor2, 0.5e19, {from: role.investor1});
-
-        try {
-            await nzt.transferFrom(role.investor1, role.investor3, 0.5e19, {from: role.investor2});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
-
-        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
-        assert.equal(await nzt.balanceOf(role.investor2), 0);
-        assert.equal(await nzt.balanceOf(role.investor3), 0);
-        assert.equal(await nzt.totalSupply(), 0.1e20);
-    })
-
-    it('tries to transfer tokens when unlocked', async function() {
-    	await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
-    	assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
-        assert.equal(await nzt.isUnlocked(), false);
-
-        try {
-            await nzt.transfer(role.investor2, 0.5e19, {from: role.investor1});
-        } catch (error) {
-            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
-        }
-
-    	assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
-    	assert.equal(await nzt.balanceOf(role.investor2), 0);
-    	assert.equal(await nzt.totalSupply(), 0.1e20);
-    })
-
-    it('burns tokesn', async function() {
+    it('burns tokens', async function() {
         noosphereAddress = 'address';
         await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
         assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);

@@ -15,8 +15,8 @@ contract RoundA is Crowdsale
     	            uint end) public
         Crowdsale(beneficiary, foundation, advisers, nodes, team, start, end) {
         	token = new Token();
-            vesting = new Vesting(token);
         }
+
 
     function startRoundB(address roundB) public onlyOwner {
     	require(getCurrentTime() > endTime && !newRoundStarted);
@@ -34,21 +34,23 @@ contract RoundA is Crowdsale
 
         if (money >= 250 ether) {
             bonus = tokens * 15 / 100;
+            token.mint(vesting, bonus);
+            vesting.setLock(backer, bonus, 90 * 1 days);
         }
         if (money >= 50 ether && money < 250 ether) {
             bonus = tokens * 20 / 100;
+            token.mint(vesting, bonus);
+            vesting.setLock(backer, bonus, 120 * 1 days);
         }
 
         if (remainBonusTokens < bonus) {
             bonus = remainBonusTokens;
         }
 
-        frozenTokens[backer] += bonus;
+        //frozenTokens[backer] += bonus;
 
         token.addTotalBonus(bonus);
 
-        token.addTotalFrozen(bonus);
-
-        //return bonus;
+        //token.addTotalFrozen(bonus);
     }
 }
