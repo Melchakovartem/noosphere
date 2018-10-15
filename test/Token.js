@@ -17,7 +17,7 @@ contract('Token', function(accounts) {
         return role;
     };
 
-	beforeEach('setup contract for each test', async function () {
+    beforeEach('setup contract for each test', async function () {
         role = await instantiate();
         nzt = await Token.new({from: role.owner});
     })
@@ -32,30 +32,22 @@ contract('Token', function(accounts) {
     })
 
     it('transfers tokens', async function() {
-    	await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
-    	assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+        await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
+        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+        
+        assert.equal(await nzt.isLocked(), false);
 
-        assert.equal(await nzt.isUnlocked(), false);
-
-        await nzt.setUnlocked({from: role.owner});
-    	
-        assert.equal(await nzt.isUnlocked(), true);
-
-    	await nzt.transfer(role.investor2, 0.5e19, {from: role.investor1});
-    	assert.equal(await nzt.balanceOf(role.investor1), 0.5e19);
-    	assert.equal(await nzt.balanceOf(role.investor2), 0.5e19);
-    	assert.equal(await nzt.totalSupply(), 0.1e20);
+        await nzt.transfer(role.investor2, 0.5e19, {from: role.investor1});
+        assert.equal(await nzt.balanceOf(role.investor1), 0.5e19);
+        assert.equal(await nzt.balanceOf(role.investor2), 0.5e19);
+        assert.equal(await nzt.totalSupply(), 0.1e20);
     })
 
     it('transfers allowed tokens', async function() {
         await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
         assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
         
-        assert.equal(await nzt.isUnlocked(), false);
-
-        await nzt.setUnlocked({from: role.owner});
-        
-        assert.equal(await nzt.isUnlocked(), true);
+        assert.equal(await nzt.isLocked(), false);
 
         await nzt.approve(role.investor2, 0.5e19, {from: role.investor1});
         await nzt.transferFrom(role.investor1, role.investor3, 0.5e19, {from: role.investor2});
@@ -63,6 +55,51 @@ contract('Token', function(accounts) {
         assert.equal(await nzt.balanceOf(role.investor1), 0.5e19);
         assert.equal(await nzt.balanceOf(role.investor2), 0);
         assert.equal(await nzt.balanceOf(role.investor3), 0.5e19);
+        assert.equal(await nzt.totalSupply(), 0.1e20);
+    })
+
+    it('does not transfer tokens when locked', async function() {
+        await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
+        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+
+        assert.equal(await nzt.isLocked(), false);
+
+        await nzt.setLocked({from: role.owner});
+        
+        assert.equal(await nzt.isLocked(), true);
+
+        try {
+           await nzt.transfer(role.investor2, 0.5e19, {from: role.investor1});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+
+        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+        assert.equal(await nzt.balanceOf(role.investor2), 0);
+        assert.equal(await nzt.totalSupply(), 0.1e20);
+    })
+
+    it('does not transfer allowed tokens when locked', async function() {
+        await nzt.mint(role.investor1, 0.1e20, {from: role.owner});
+        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+        
+        assert.equal(await nzt.isLocked(), false);
+
+        await nzt.setLocked({from: role.owner});
+        
+        assert.equal(await nzt.isLocked(), true);
+
+        await nzt.approve(role.investor2, 0.5e19, {from: role.investor1});
+
+        try {
+           await nzt.transferFrom(role.investor1, role.investor3, 0.5e19, {from: role.investor2});
+        } catch (error) {
+            assert.equal(error, 'Error: VM Exception while processing transaction: revert');
+        }
+
+        assert.equal(await nzt.balanceOf(role.investor1), 0.1e20);
+        assert.equal(await nzt.balanceOf(role.investor2), 0);
+        assert.equal(await nzt.balanceOf(role.investor3), 0);
         assert.equal(await nzt.totalSupply(), 0.1e20);
     })
 
