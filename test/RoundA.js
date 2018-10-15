@@ -62,15 +62,13 @@ contract('RoundA', function(accounts) {
                                   endTimeRoundB, {from: role.owner, gas: 6700000});
         const addressRoundB = await roundB.address;
 
-        const vesting = await Vesting.new(await token.address, {from: role.owner});
+        const vesting = await Vesting.at(await roundA.vesting());
 
         return [roundA, addressRoundA, roundB, addressRoundB,  token, role, vesting];
     };
     
 	beforeEach('setup contract for each test', async function () {
         [roundA, addressRoundA, roundB, addressRoundB, token, role, vesting] = await instantiate();
-        await roundA.setVesting(vesting.address, {from: role.owner});
-        await vesting.changeCrowdsale(addressRoundA, {from: role.owner});
     })
 
     it('has an owner', async function () {

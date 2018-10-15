@@ -14,6 +14,7 @@ contract RoundB is Crowdsale
     	            uint end) public
         Crowdsale(beneficiary, foundation, advisers, nodes, team, start, end) {
         	token = Token(tokenAddress);
+            vesting = Vesting(token);
         }
     function isFinishedICO() public constant returns (bool finished) {
         return isReachedHardCap() || getCurrentTime() > endTime;

@@ -65,10 +65,6 @@ contract Crowdsale is Owned {
         endTime = end;
     }
 
-    function setVesting(address vestingAddress) public onlyOwner {
-        vesting = Vesting(vestingAddress);
-    }
-
     function changeManagerKYC(address newManagerKYC) public onlyOwner {
         managerKYC = newManagerKYC;
     }
